@@ -1,0 +1,141 @@
+.sidebar-wrapper {
+  width: 320px;
+  height: 100%;
+  background: white;
+  border-right: 1px solid #edf2f7;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.02);
+  z-index: 10;
+}
+
+.map-wrapper {
+  flex: 1; 
+  position: relative;
+  background: #f0f2f5;
+  height: 100vh;      
+  overflow-y: auto;
+}
+
+.dashboard-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card.active {
+  border-color: #00a8ff;
+  background-color: #f0f9ff;
+}
+
+.card-label {
+  margin: 0;
+  font-size: 13px;
+  color: #718096;
+}
+
+.card-value {
+  margin: 8px 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a202c;
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.status-badge.green { background: #e6f4ea; color: #1e7e34; }
+.status-badge.yellow { background: #fff3cd; color: #856404; }
+
+.chart-card, .table-card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.chart-placeholder {
+  width: 100%;
+  height: 200px;
+  background: #f9fafb;
+  border: 1px dashed #cbd5e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+  border-radius: 10px;
+}
+
+.stat-card { background: white; padding: 20px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: 0.3s; }
+.stat-card.active { border-color: #00a8ff; background: #f0faff; }
+.stat-card .label { font-size: 12px; color: #666; }
+.stat-card .value { margin: 5px 0; font-size: 22px; }
+
+.white-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+.big-val { font-size: 56px; margin: 0; font-weight: 800; }
+.progress-container { width: 100%; height: 10px; background: #eee; border-radius: 10px; margin-top: 15px; }
+.progress-bar { height: 100%; background: #ffa500; border-radius: 10px; }
+
+.info-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 20px; }
+.info-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
+.mini-card { background: white; padding: 15px; border-radius: 12px; text-align: center; }
+
+.prediksi-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; }
+.blue-hero { background: linear-gradient(135deg, #007bff, #0056b3); color: white; border-radius: 20px; padding: 40px; text-align: center; }
+.accuracy-box { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; display: inline-block; margin-top: 20px; }
+
+/* --- CSS UNTUK ALERT MODAL --- */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.75); /* Gelapkan layar belakang */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* Harus jauh lebih tinggi dari sidebar (10) */
+  backdrop-filter: blur(5px); /* Efek blur biar fokus ke modal */
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  text-align: center;
+  width: 320px;
+  max-width: 90%;
+  animation: slideUp 0.3s ease-out;
+  border-top: 8px solid; 
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
