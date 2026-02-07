@@ -83,7 +83,7 @@ useEffect(() => {
     .then(setRiverGeo) 
     .catch(err => console.error("Sungai error:", err));
 
-  shp("/DAS/KEC.zip")
+  shp("/DAS/MAJALAYA.zip")
     .then(setKecGeo)
     .catch(err => console.error("KEC error:", err));
 }, []);

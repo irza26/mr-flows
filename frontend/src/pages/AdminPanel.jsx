@@ -124,6 +124,38 @@ export default function AdminPanel({ setView }) {
     setView("map");
   };
 
+  const saveThreshold = async () => {
+    try {
+      const values = tmaRules.map(r => r.threshold).sort((a, b) => a - b);
+
+      if (values.length < 3) {
+        alert("Rule TMA belum lengkap");
+        return;
+      }
+
+      if (values[0] >= values[1] || values[1] >= values[2]) {
+        alert("Urutan harus: Aman < Waspada < Bahaya");
+        return;
+      }
+
+      for (const r of tmaRules) {
+        await fetch(`http://127.0.0.1:8000/alerts/${r.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rule_name: r.label,
+            threshold: r.threshold
+          })
+        });
+      }
+
+      alert("Threshold TMA berhasil diperbarui");
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyimpan threshold");
+    }
+  };
+
   return (
     <div style={styles.layout}>
       <style>{`
@@ -133,7 +165,17 @@ export default function AdminPanel({ setView }) {
 
       <aside style={styles.sidebar}>
         <div style={styles.logoWrap}>
-          <div style={styles.logoCircle}><img src={logoMrFlows} alt="logo" width={24} /></div>
+          <img 
+            src={logoMrFlows} 
+            alt="Logo MR-FLOWS" 
+            style={{ 
+            width: '40px', 
+            height: '40px', 
+            objectFit: 'cover',
+            borderRadius: '50%',
+            backgroundColor: '#f0f0f0', 
+            display: 'block'}} 
+          />
           <span style={{ fontWeight: 800, color: "#1e293b", letterSpacing: '0.5px' }}>MR-ADMIN</span>
         </div>
 
@@ -174,10 +216,10 @@ export default function AdminPanel({ setView }) {
             <>
               <div style={styles.actionRow} className="no-print">
                 <button onClick={handleSyncStations} style={styles.primaryBtn}>
-                  🔄 {loadingSync ? "Menyinkronkan..." : "Sinkronisasi Stasiun"}
+                   {loadingSync ? "Menyinkronkan..." : "Sinkronisasi Stasiun"}
                 </button>
-                <button onClick={() => cleanupRainfall().then(r => alert(`Data CH dihapus: ${r.deleted_rows}`))} style={styles.dangerBtn}>🧹 Bersihkan Data CH</button>
-                <button onClick={() => cleanupTmaDuplicate().then(r => alert(`Data TMA dihapus: ${r.deleted_rows}`))} style={styles.warnBtn}>🧹 Bersihkan Data TMA</button>
+                <button onClick={() => cleanupRainfall().then(r => alert(`Data CH dihapus: ${r.deleted_rows}`))} style={styles.dangerBtn}>Bersihkan Data CH</button>
+                <button onClick={() => cleanupTmaDuplicate().then(r => alert(`Data TMA dihapus: ${r.deleted_rows}`))} style={styles.warnBtn}>Bersihkan Data TMA</button>
               </div>
 
               <div style={{ overflowX: 'auto' }}>
@@ -283,7 +325,9 @@ export default function AdminPanel({ setView }) {
                   </div>
                 </div>
               ))}
-              <button style={styles.saveBtn}>Simpan Konfigurasi</button>
+              <button onClick={saveThreshold} style={styles.saveBtn}>
+                Simpan Konfigurasi
+              </button>
             </div>
           )}
         </div>
@@ -296,7 +340,6 @@ const styles = {
   layout: { display: "flex", height: "100vh", backgroundColor: "#f8fafc", fontFamily: "'Inter', sans-serif" },
   sidebar: { width: 280, padding: "30px 20px", backgroundColor: "white", borderRight: "1px solid #e2e8f0", display: "flex", flexDirection: "column" },
   logoWrap: { display: "flex", gap: 12, alignItems: "center", marginBottom: 40, paddingLeft: 10 },
-  logoCircle: { background: "#eff6ff", padding: 8, borderRadius: 10 },
   nav: active => ({ padding: "14px 18px", marginBottom: 8, borderRadius: 12, cursor: "pointer", fontSize: "14px", fontWeight: active ? "600" : "500", background: active ? "#3b82f6" : "transparent", color: active ? "white" : "#64748b", boxShadow: active ? "0 4px 12px rgba(59, 130, 246, 0.2)" : "none", transition: "0.2s" }),
   logoutBtn: { padding: 12, borderRadius: 10, border: "1px solid #fee2e2", background: "#fef2f2", color: "#ef4444", fontWeight: "600", cursor: "pointer" },
   main: { flex: 1, padding: "40px 60px", overflowY: "auto" },

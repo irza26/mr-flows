@@ -30,8 +30,11 @@ export default function StationPopup({ station, data }) {
     <div style={{ width: 220, fontSize: 13, lineHeight: 1.5 }}>
       
       <div style={{ fontWeight: "bold", fontSize: 15 }}>
-        {station.label}
+        {station.type === "tma"
+          ? "Pos TMA Majalaya"
+          : station.label}
       </div>
+
 
       <hr style={{ margin: "8px 0" }} />
 
