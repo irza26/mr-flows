@@ -24,8 +24,6 @@ Saat ini, proyek MrFlows sedang dikembangkan dan diimplementasikan secara berkel
 - Validasi dan pra-pemrosesan data
 - Penyimpanan data berbasis waktu (timestamp) dan lokasi stasiun
 
----
-
 ## Fitur Utama
 
 - Pemantauan curah hujan secara real-time  
