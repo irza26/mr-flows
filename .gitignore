@@ -1,0 +1,46 @@
+# ===============
+# Frontend (React / Vite / Node)
+# ===============
+node_modules/
+dist/
+.next/
+build/
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+# ===============
+# Backend (Python)
+# ===============
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ===============
+# OS & Extension Files
+# ===============
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ===============
+# Binary Files (Biang Kerok Eror)
+# ===============
+*.dll
+*.node
+*.exe
+
+# Data
+*.csv
+*.json
+*.xlsx
+*.nc

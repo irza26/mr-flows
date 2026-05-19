@@ -1,0 +1,1 @@
+BATAS_NORMAL = 3.81

@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+passlib[bcrypt]
+python-jose
+python-multipart
+sqlalchemy
+psycopg2-binary
+geopandas
+fiona
+shapely
+pyogrio
+requests
+joblib
