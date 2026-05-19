@@ -1,68 +1,71 @@
 from fastapi import APIRouter, HTTPException
 from app.db import conn
-import joblib
-from app.services.tma_service import predict_single, predict_series
+import time
+import requests
+from app.services.tma_service import predict_series
 
 router = APIRouter(prefix="/tma", tags=["TMA"])
 
-# load model sekali (biar efisien)
-model = joblib.load("model/model_tma.pkl")
+# =====================================================
+# EXTERNAL THRESHOLD API (BBWS Citarum)
+# Mapping internal station name → wlobscd di API eksternal
+# =====================================================
+EXTERNAL_API_URL = "https://ffws-bbwscitarum.id/waterlevel/WlIfList/agccd/bsncd"
+STATION_WLOBSCD = {
+    "Bendung_Wanir": "206016005",
+}
+
+_threshold_cache = {}
+_CACHE_TTL = 3600  # 1 jam
 
 
-def get_rainfall_lag1(cur, datetime_lag):
-    cur.execute("""
-        SELECT station, rainfall
-        FROM rainfall
-        WHERE datetime = %s
-    """, (datetime_lag,))
+def get_external_thresholds(station: str):
+    """Ambil wrnstep1/2/3 dari API BBWS. Fallback ke alert_rules DB jika gagal."""
+    wlobscd = STATION_WLOBSCD.get(station)
+    if not wlobscd:
+        return _get_db_thresholds()
 
-    rain = {}
-    for r in cur.fetchall():
-        rain[f"rainfall_{r[0]}"] = float(r[1] or 0)
+    now = time.time()
+    cached = _threshold_cache.get(wlobscd)
+    if cached and (now - cached["ts"]) < _CACHE_TTL:
+        return cached["rules"]
 
-    return rain
+    try:
+        resp = requests.post(EXTERNAL_API_URL, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        items = data.get("resultData", data) if isinstance(data, dict) else data
+
+        for item in items:
+            if str(item.get("wlobscd")) == wlobscd:
+                rules = [
+                    {"label": "Waspada", "threshold": float(item["wrnstep1"])},
+                    {"label": "Siaga",   "threshold": float(item["wrnstep2"])},
+                    {"label": "Bahaya",  "threshold": float(item["wrnstep3"])},
+                ]
+                _threshold_cache[wlobscd] = {"ts": now, "rules": rules}
+                return rules
+    except Exception as e:
+        print(f"EXTERNAL THRESHOLD ERROR: {e} — fallback ke DB")
+
+    return _get_db_thresholds()
 
 
-def predict_tma(cur, station, last_time):
-    cur.execute("""
-        SELECT water_level
-        FROM tma
-        WHERE station = %s
-        ORDER BY datetime DESC
-        LIMIT 2
-    """, (station,))
-
-    rows = cur.fetchall()
-
-    if len(rows) < 2:
+def _get_db_thresholds():
+    """Ambil threshold dari alert_rules DB, skip rule Aman."""
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT rule_name, threshold FROM alert_rules
+            WHERE module = 'tma' AND status = 'active' AND rule_name != 'Aman'
+            ORDER BY threshold ASC
+        """)
+        rules = [{"label": r[0], "threshold": float(r[1])} for r in cur.fetchall()]
+        cur.close()
+        return rules if rules else None
+    except Exception as e:
+        print(f"DB THRESHOLD ERROR: {e}")
         return None
-
-    tma_lag1 = float(rows[1][0])
-
-    cur.execute("""
-        SELECT datetime
-        FROM tma
-        WHERE station = %s
-        ORDER BY datetime DESC
-        LIMIT 2
-    """, (station,))
-
-    time_rows = cur.fetchall()
-    datetime_lag = time_rows[1][0]
-
-    rainfall = get_rainfall_lag1(cur, datetime_lag)
-
-    X = [[
-        rainfall.get("rainfall_Cihawuk", 0),
-        rainfall.get("rainfall_Cikitu", 0),
-        rainfall.get("rainfall_Ibun", 0),
-        rainfall.get("rainfall_Kertasari", 0),
-        rainfall.get("rainfall_Paseh Cipaku", 0),
-        tma_lag1
-    ]]
-
-    pred = model.predict(X)[0]
-    return round(float(pred), 2)
 
 
 @router.get("/dashboard")
@@ -108,30 +111,20 @@ def get_tma_dashboard(station: str):
         last = round(float(row_last[0]), 2)
 
         # ======================
-        # 🔥 PREDIKSI (FIX DI SINI)
+        # PREDIKSI MULTI-STEP (v2 model + WRF)
         # ======================
         try:
-            prediction = predict_single(station)
             series = predict_series(station)
+            prediction = series[0]["water_level"] if series else None
         except Exception as e:
             print("PREDICTION ERROR:", e)
             prediction = None
             series = []
 
         # ======================
-        # RULES (STATUS)
+        # RULES (STATUS) — dari API BBWS eksternal
         # ======================
-        cur.execute("""
-            SELECT rule_name, threshold
-            FROM alert_rules
-            WHERE module = 'tma' AND status = 'active'
-            ORDER BY threshold ASC
-        """)
-
-        rules = [
-            {"label": r[0], "threshold": float(r[1])}
-            for r in cur.fetchall()
-        ]
+        rules = get_external_thresholds(station) or []
 
         status = "Aman"
         percent = 0
