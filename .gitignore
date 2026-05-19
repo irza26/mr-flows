@@ -41,6 +41,5 @@ Thumbs.db
 
 # Data
 *.csv
-*.json
 *.xlsx
 *.nc

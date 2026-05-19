@@ -65,6 +65,14 @@ export function getTMAStatus(status) {
         bg: "#fff5f5"
       };
 
+    case "Siaga":
+      return {
+        label: "Siaga",
+        emoji: "🟠",
+        color: "#f97316",
+        bg: "#fff7ed"
+      };
+
     case "Waspada":
       return {
         label: "Waspada",

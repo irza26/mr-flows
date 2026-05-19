@@ -2,8 +2,9 @@ import React from 'react';
 
 export default function AlertModal({ onClose, status, stationName }) {
   const config = {
-    "Bahaya": { icon: "⚠️", title: "BAHAYA!", color: "#e53e3e", msg: "Potensi Banjir!" },
-    "Waspada": { icon: "🔔", title: "WASPADA", color: "#d97706", msg: "Air Naik!" }
+    "Bahaya":  { icon: "⚠️", title: "BAHAYA!",  color: "#e53e3e", msg: "Potensi Banjir!" },
+    "Siaga":   { icon: "🚨", title: "SIAGA!",   color: "#f97316", msg: "Waspadai Kenaikan Air!" },
+    "Waspada": { icon: "🔔", title: "WASPADA",  color: "#d97706", msg: "Air Naik!" }
   };
 
   const current = config[status] || config["Bahaya"];

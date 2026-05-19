@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Tugas Akhir ITB\\\\mrflows\" -Recurse -File | Where-Object { $_.Extension -match '\\\\.\\(jsx|tsx|py\\)$' } | Where-Object { $_.Name -match '\\(admin|threshold|status|alert|tma\\)' } | Select-Object -ExpandProperty FullName)"
+    ]
+  }
+}

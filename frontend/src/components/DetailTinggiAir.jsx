@@ -14,21 +14,26 @@ import { getTMAStatus } from "../utils/status";
 
 export default function DetailTinggiAir({ data, stationStatus }) {
   // 1. Data Safety & Sorting
+  // Filter out "Aman" — selalu dijadikan zona implisit (di bawah threshold pertama)
   const chartData = Array.isArray(data?.chart) ? data.chart : [];
   const sortedRules = Array.isArray(data?.rules)
-    ? [...data.rules].sort((a, b) => a.threshold - b.threshold)
+    ? [...data.rules]
+        .sort((a, b) => a.threshold - b.threshold)
+        .filter(r => r.label !== "Aman")
     : [];
 
   // 2. Identifikasi Ambang Batas untuk Area Warna
   const ruleWaspada = sortedRules.find(r => r.label === "Waspada");
-  const ruleBahaya = sortedRules.find(r => r.label === "Bahaya");
+  const ruleSiaga   = sortedRules.find(r => r.label === "Siaga");
+  const ruleBahaya  = sortedRules.find(r => r.label === "Bahaya");
 
   // 3. Setting Batas Atas Y-Axis (Paten agar garis Bahaya selalu muncul)
   const maxRuleValue = ruleBahaya ? ruleBahaya.threshold : 2.5;
   const yAxisMax = +(maxRuleValue + 0.5).toFixed(1);
 
   const getRuleColor = (label) => {
-    if (label === "Bahaya") return "#e53e3e";
+    if (label === "Bahaya")  return "#e53e3e";
+    if (label === "Siaga")   return "#f97316";
     if (label === "Waspada") return "#d97706";
     return "#38a169";
   };
@@ -91,7 +96,7 @@ export default function DetailTinggiAir({ data, stationStatus }) {
           <div className="progress-bar" style={{ width: `${safePercent}%`, backgroundColor: currentStatus.color }}></div>
         </div>
         <p style={{ marginTop: "10px", fontSize: "14px", fontWeight: "bold", color: currentStatus.color }}>
-          {data.percent}% dari batas {ruleWaspada?.label ?? "Normal"} ({ruleWaspada?.threshold ?? "-"} m)
+          {data.percent}% dari batas {ruleBahaya?.label ?? "Bahaya"} ({ruleBahaya?.threshold ?? "-"} m)
         </p>
       </div>
 
@@ -121,6 +126,13 @@ export default function DetailTinggiAir({ data, stationStatus }) {
             </div>
           </div>
           <div style={{ display: "grid", gap: "12px" }}>
+            {/* Zona Aman: 0 sampai threshold Waspada */}
+            {ruleWaspada && (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px" }}>
+                <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#38a169" }} />
+                0 – {ruleWaspada.threshold} m&nbsp; Aman
+              </div>
+            )}
             {sortedRules.map((rule, idx) => (
               <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px" }}>
                 <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: getRuleColor(rule.label) }} />
@@ -148,6 +160,9 @@ export default function DetailTinggiAir({ data, stationStatus }) {
               <div style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: "rgba(217, 119, 6, 0.15)" }}></div> Waspada
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: "600", color: "#4a5568" }}>
+              <div style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: "rgba(249, 115, 22, 0.15)" }}></div> Siaga
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: "600", color: "#4a5568" }}>
               <div style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: "rgba(229, 62, 62, 0.15)" }}></div> Bahaya
             </div>
           </div>
@@ -170,28 +185,16 @@ export default function DetailTinggiAir({ data, stationStatus }) {
 
               {/* AREA BACKGROUND ZONA */}
               {ruleWaspada && (
-                <ReferenceArea 
-                  y1={0} 
-                  y2={ruleWaspada.threshold} 
-                  fill="rgba(56, 161, 105, 0.1)" 
-                  stroke="none"
-                />
+                <ReferenceArea y1={0} y2={ruleWaspada.threshold} fill="rgba(56, 161, 105, 0.1)" stroke="none" />
               )}
-              {ruleWaspada && ruleBahaya && (
-                <ReferenceArea 
-                  y1={ruleWaspada.threshold} 
-                  y2={ruleBahaya.threshold} 
-                  fill="rgba(217, 119, 6, 0.1)" 
-                  stroke="none"
-                />
+              {ruleWaspada && ruleSiaga && (
+                <ReferenceArea y1={ruleWaspada.threshold} y2={ruleSiaga.threshold} fill="rgba(217, 119, 6, 0.1)" stroke="none" />
+              )}
+              {ruleSiaga && ruleBahaya && (
+                <ReferenceArea y1={ruleSiaga.threshold} y2={ruleBahaya.threshold} fill="rgba(249, 115, 22, 0.1)" stroke="none" />
               )}
               {ruleBahaya && (
-                <ReferenceArea 
-                  y1={ruleBahaya.threshold} 
-                  y2={yAxisMax} 
-                  fill="rgba(229, 62, 62, 0.1)" 
-                  stroke="none"
-                />
+                <ReferenceArea y1={ruleBahaya.threshold} y2={yAxisMax} fill="rgba(229, 62, 62, 0.1)" stroke="none" />
               )}
 
               {/* GARIS REFERENCE AMBANG BATAS */}

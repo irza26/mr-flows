@@ -79,7 +79,7 @@ export default function MapViewer() {
   useEffect(() => {
     const tmaData = dataMap["AWLR Bendung Wanir"];
     if (!tmaData) return;
-    if ((tmaData.status === "Waspada" || tmaData.status === "Bahaya") && !alertTriggered.current) {
+    if ((tmaData.status === "Waspada" || tmaData.status === "Siaga" || tmaData.status === "Bahaya") && !alertTriggered.current) {
       const key = `alert_${tmaData.status}_${tmaData.last_time}`;
       if (!localStorage.getItem(key)) {
         alertTriggered.current = true;
@@ -168,6 +168,7 @@ export default function MapViewer() {
               <b>TMA</b>
               <LegendItem color="#38a169" label="Aman" />
               <LegendItem color="#d69e2e" label="Waspada" />
+              <LegendItem color="#f97316" label="Siaga" />
               <LegendItem color="#e53e3e" label="Bahaya" />
               <hr style={{ opacity: 0.2, margin: "8px 0" }} />
               <b>Curah Hujan</b>
@@ -273,6 +274,7 @@ export default function MapViewer() {
                   <div style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
                     <Dot color="#38a169" /> Aman
                     <Dot color="#d69e2e" /> Waspada
+                    <Dot color="#f97316" /> Siaga
                     <Dot color="#e53e3e" /> Bahaya
                   </div>
                 </div>

@@ -97,7 +97,7 @@ export default function DashboardMapViewer() {
   useEffect(() => {
     const tmaData = dataMap["AWLR Bendung Wanir"];
     if (!tmaData) return;
-    if ((tmaData.status === "Waspada" || tmaData.status === "Bahaya") && !alertTriggered.current) {
+    if ((tmaData.status === "Waspada" || tmaData.status === "Siaga" || tmaData.status === "Bahaya") && !alertTriggered.current) {
       const key = `alert_${tmaData.status}_${tmaData.last_time}`;
       if (!localStorage.getItem(key)) {
         alertTriggered.current = true;

@@ -17,7 +17,8 @@ import {
   cleanupRainfall,
   cleanupTmaDuplicate,
   getCHSidebar,
-  getCHDashboard
+  getCHDashboard,
+  getTMADashboard
 } from "../services/api";
 
 export default function AdminPanel({ setView }) {
@@ -30,9 +31,15 @@ export default function AdminPanel({ setView }) {
   const [periode, setPeriode] = useState(24); 
 
   const [activeTab, setActiveTab] = useState("kelola");
-  const [tmaRules, setTmaRules] = useState([]);
   const [loadingSync, setLoadingSync] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Peringatan Dini
+  const [tmaWarning, setTmaWarning]           = useState(null);
+  const [warningLoading, setWarningLoading]   = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [generatedText, setGeneratedText]     = useState("");
+  const [copied, setCopied]                   = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -64,6 +71,15 @@ export default function AdminPanel({ setView }) {
   }, []);
 
   useEffect(() => {
+    if (activeTab !== "peringatan") return;
+    setWarningLoading(true);
+    getTMADashboard("Bendung_Wanir")
+      .then(d => { if (!d?.error) setTmaWarning(d); })
+      .catch(console.error)
+      .finally(() => setWarningLoading(false));
+  }, [activeTab]);
+
+  useEffect(() => {
     if (activeTab !== "laporan" || !selectedStation) return;
     
     getCHDashboard(selectedStation)
@@ -82,19 +98,6 @@ export default function AdminPanel({ setView }) {
       .catch(console.error);
   }, [activeTab, selectedStation]);
 
-  useEffect(() => {
-    if (activeTab !== "threshold") return;
-    fetch("http://127.0.0.1:8000/alerts/")
-      .then(res => res.json())
-      .then(data => {
-        const tmaOnly = data
-          .filter(r => r[2] === "tma")
-          .map(r => ({ id: r[0], label: r[1], threshold: Number(r[4]) }))
-          .sort((a, b) => a.threshold - b.threshold);
-        setTmaRules(tmaOnly);
-      })
-      .catch(console.error);
-  }, [activeTab]);
 
   const getFilteredData = () => {
     if (!chData || chData.length === 0) return [];
@@ -124,37 +127,76 @@ export default function AdminPanel({ setView }) {
     setView("map");
   };
 
-  const saveThreshold = async () => {
-    try {
-      const values = tmaRules.map(r => r.threshold).sort((a, b) => a - b);
-
-      if (values.length < 3) {
-        alert("Rule TMA belum lengkap");
-        return;
-      }
-
-      if (values[0] >= values[1] || values[1] >= values[2]) {
-        alert("Urutan harus: Aman < Waspada < Bahaya");
-        return;
-      }
-
-      for (const r of tmaRules) {
-        await fetch(`http://127.0.0.1:8000/alerts/${r.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            rule_name: r.label,
-            threshold: r.threshold
-          })
-        });
-      }
-
-      alert("Threshold TMA berhasil diperbarui");
-    } catch (err) {
-      console.error(err);
-      alert("Gagal menyimpan threshold");
-    }
+  const getPredictionStatus = (prediction, rules) => {
+    if (!rules || rules.length === 0) return "Aman";
+    const filtered = [...rules].filter(r => r.label !== "Aman").sort((a, b) => a.threshold - b.threshold);
+    let status = "Aman";
+    filtered.forEach(r => { if (prediction >= r.threshold) status = r.label; });
+    return status;
   };
+
+  const getDeltaMagnitude = (deltaM) => {
+    const abs = Math.abs(deltaM);
+    if (abs < 0.10) return "Kecil";
+    if (abs < 0.30) return "Kecil hingga Sedang";
+    if (abs < 0.50) return "Sedang hingga Besar";
+    return "Besar";
+  };
+
+  const formatWarningTime = (last_time) => {
+    if (!last_time) return { dateStr: "-", timeStr: "-", predictedTimeStr: "-" };
+    const dt = new Date(last_time.replace(" ", "T"));
+    const dd   = String(dt.getDate()).padStart(2, "0");
+    const mm   = String(dt.getMonth() + 1).padStart(2, "0");
+    const yyyy = dt.getFullYear();
+    const hh   = String(dt.getHours()).padStart(2, "0");
+    const min  = String(dt.getMinutes()).padStart(2, "0");
+    const pred = new Date(dt.getTime() + 60 * 60 * 1000);
+    const phh  = String(pred.getHours()).padStart(2, "0");
+    const pmin = String(pred.getMinutes()).padStart(2, "0");
+    return {
+      dateStr: `${dd}/${mm}/${yyyy}`,
+      timeStr: `${hh}.${min}`,
+      predictedTimeStr: `${phh}.${pmin}`
+    };
+  };
+
+  const handleGenerateWarning = () => {
+    if (!tmaWarning) return;
+    const { dateStr, timeStr, predictedTimeStr } = formatWarningTime(tmaWarning.last_time);
+    const levelCm   = Math.round((tmaWarning.last ?? 0) * 100);
+    const predLevel = tmaWarning.prediction ?? tmaWarning.last ?? 0;
+    const delta     = predLevel - (tmaWarning.last ?? 0);
+    const magnitude = getDeltaMagnitude(delta);
+    const predStatus = getPredictionStatus(predLevel, tmaWarning.rules);
+    const currentStatus = tmaWarning.status ?? "Aman";
+
+    const text =
+`*PERINGATAN DINI BANJIR PARTISIPATIF*
+Titimangsa : ${dateStr} - ${timeStr} WIB
+Area Perhatian : Sebagian Desa Bojong Kec. Majalaya & Desa Panyadap Kec. Solokanjeruk
+
+■ Kondisi TMA Sungai Citarum di Bendung Wanir :
+Pukul ${timeStr} ↔️ di ${levelCm} cm
+Status : *${currentStatus.toUpperCase()}*
+Sumber : AWLR Bendung Wanir (BBWS Citarum)
+
+■ Prakiraan Perubahan Muka Air di Area Perhatian :
+• Potensi Peningkatan Muka Air Sungai : ${magnitude}
+• Estimasi Puncak Muka Air : Pukul ±${predictedTimeStr} WIB (Status Prediksi: ${predStatus})`;
+
+    setGeneratedText(text);
+    setShowWarningModal(true);
+    setCopied(false);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(generatedText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
 
   return (
     <div style={styles.layout}>
@@ -182,7 +224,7 @@ export default function AdminPanel({ setView }) {
         <nav style={{ flex: 1 }}>
           <div onClick={() => setActiveTab("kelola")} style={styles.nav(activeTab === "kelola")}>Kelola Stasiun</div>
           <div onClick={() => setActiveTab("laporan")} style={styles.nav(activeTab === "laporan")}>Laporan Data</div>
-          <div onClick={() => setActiveTab("threshold")} style={styles.nav(activeTab === "threshold")}>Threshold TMA</div>
+          <div onClick={() => setActiveTab("peringatan")} style={styles.nav(activeTab === "peringatan")}>Peringatan Dini</div>
         </nav>
 
         <button onClick={handleLogout} style={styles.logoutBtn}>Keluar</button>
@@ -194,8 +236,8 @@ export default function AdminPanel({ setView }) {
             <h1 style={styles.title}>
               {activeTab === "kelola" && "Dashboard Status Stasiun"}
               {activeTab === "laporan" && "Analisis Curah Hujan"}
-              {activeTab === "threshold" && "Konfigurasi Threshold"}
-            </h1>
+              {activeTab === "peringatan" && "Generator Peringatan Dini"}
+</h1>
             <p style={styles.subtitle}>Sistem Monitoring Banjir Real-time</p>
           </div>
 
@@ -311,27 +353,124 @@ export default function AdminPanel({ setView }) {
             </>
           )}
 
-          {activeTab === "threshold" && (
-            <div style={{ maxWidth: 500 }}>
-              <p style={{ marginBottom: 25, color: '#64748b', fontSize: 14 }}>Atur batas ketinggian air (meter) untuk klasifikasi status siaga.</p>
-              {tmaRules.map((r, i) => (
-                <div key={r.id} style={styles.inputRow}>
-                  <label style={styles.inputLabel}>{r.label}</label>
-                  <div style={styles.inputWrapper}>
-                    <input type="number" step="0.01" value={r.threshold} onChange={e => {
-                      const copy = [...tmaRules]; copy[i].threshold = Number(e.target.value); setTmaRules(copy);
-                    }} style={styles.inputField} />
-                    <span style={styles.unitLabel}>meter</span>
-                  </div>
-                </div>
-              ))}
-              <button onClick={saveThreshold} style={styles.saveBtn}>
-                Simpan Konfigurasi
-              </button>
-            </div>
-          )}
+          {activeTab === "peringatan" && (() => {
+            const rules = tmaWarning?.rules ?? [];
+            const filtered = [...rules].filter(r => r.label !== "Aman").sort((a, b) => a.threshold - b.threshold);
+            const predLevel = tmaWarning?.prediction ?? tmaWarning?.last ?? 0;
+            const predStatus = tmaWarning ? getPredictionStatus(predLevel, tmaWarning.rules) : "Aman";
+            const canGenerate = predStatus !== "Aman";
+
+            const statusColor = { Aman: "#22c55e", Waspada: "#d97706", Siaga: "#f97316", Bahaya: "#ef4444" };
+            const currentColor = statusColor[tmaWarning?.status] ?? "#22c55e";
+            const predColor    = statusColor[predStatus] ?? "#22c55e";
+
+            return (
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>
+                  Peringatan hanya dapat digenerate bila prediksi 1 jam ke depan menunjukkan status <b>tidak aman</b>.
+                </p>
+
+                {warningLoading ? (
+                  <p style={{ color: '#94a3b8' }}>Memuat data TMA...</p>
+                ) : tmaWarning ? (
+                  <>
+                    {/* Info cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+                      <div style={{ padding: 20, background: '#f8fafc', borderRadius: 16, borderLeft: `4px solid ${currentColor}` }}>
+                        <p style={{ fontSize: 11, color: '#64748b', margin: '0 0 6px', fontWeight: 600 }}>STATUS TERKINI</p>
+                        <p style={{ fontSize: 22, fontWeight: 800, color: currentColor, margin: 0 }}>{tmaWarning.status ?? "Aman"}</p>
+                        <p style={{ fontSize: 13, color: '#334155', margin: '4px 0 0' }}>{Math.round((tmaWarning.last ?? 0) * 100)} cm · {tmaWarning.last_time?.split(' ')[1]} WIB</p>
+                      </div>
+                      <div style={{ padding: 20, background: '#f8fafc', borderRadius: 16, borderLeft: `4px solid ${predColor}` }}>
+                        <p style={{ fontSize: 11, color: '#64748b', margin: '0 0 6px', fontWeight: 600 }}>PREDIKSI 1 JAM</p>
+                        <p style={{ fontSize: 22, fontWeight: 800, color: predColor, margin: 0 }}>{predStatus}</p>
+                        <p style={{ fontSize: 13, color: '#334155', margin: '4px 0 0' }}>{Math.round(predLevel * 100)} cm</p>
+                      </div>
+                    </div>
+
+                    {/* Ambang batas */}
+                    {filtered.length > 0 && (
+                      <div style={{ display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap' }}>
+                        {filtered.map((r, i) => (
+                          <div key={i} style={{ padding: '6px 14px', borderRadius: 20, background: '#f1f5f9', fontSize: 13, color: '#334155' }}>
+                            <span style={{ color: statusColor[r.label], fontWeight: 700 }}>{r.label}</span> ≥ {Math.round(r.threshold * 100)} cm
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Generate button */}
+                    <button
+                      onClick={handleGenerateWarning}
+                      disabled={!canGenerate}
+                      style={{
+                        padding: '14px 28px', borderRadius: 14, border: 'none', fontWeight: 700,
+                        fontSize: 15, cursor: canGenerate ? 'pointer' : 'not-allowed',
+                        background: canGenerate ? '#ef4444' : '#e2e8f0',
+                        color: canGenerate ? 'white' : '#94a3b8',
+                        boxShadow: canGenerate ? '0 4px 14px rgba(239,68,68,0.3)' : 'none'
+                      }}
+                    >
+                      {canGenerate ? '⚠️ Generate Peringatan Dini' : '✅ Kondisi Aman — Tidak Ada Peringatan'}
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ color: '#ef4444' }}>Gagal memuat data TMA.</p>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </main>
+
+      {/* MODAL PERINGATAN */}
+      {showWarningModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 20, width: 500, maxWidth: '90vw',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden'
+          }}>
+            {/* Header modal */}
+            <div style={{ padding: '18px 24px', background: '#1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>📋 Teks Peringatan Dini</span>
+              <button onClick={() => setShowWarningModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* Chat bubble */}
+            <div style={{ padding: 24 }}>
+              <div style={{
+                background: '#dcfce7', borderRadius: '4px 16px 16px 16px',
+                padding: '16px 18px', fontSize: 13, lineHeight: 1.75,
+                color: '#1e293b', fontFamily: 'monospace', whiteSpace: 'pre-wrap',
+                border: '1px solid #bbf7d0', marginBottom: 20, maxHeight: 340, overflowY: 'auto'
+              }}>
+                {generatedText}
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={handleCopy} style={{
+                  flex: 1, padding: '12px', borderRadius: 12, border: 'none', fontWeight: 700,
+                  fontSize: 14, cursor: 'pointer',
+                  background: copied ? '#22c55e' : '#0ea5e9', color: 'white',
+                  transition: 'background 0.2s'
+                }}>
+                  {copied ? '✅ Tersalin!' : '📋 Salin Teks'}
+                </button>
+                <button onClick={() => setShowWarningModal(false)} style={{
+                  padding: '12px 20px', borderRadius: 12, border: '1px solid #e2e8f0',
+                  background: '#f8fafc', color: '#64748b', fontWeight: 600, cursor: 'pointer', fontSize: 14
+                }}>
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -370,10 +509,4 @@ const styles = {
   statValue: { fontSize: 16, color: "#1e293b", fontWeight: 800 },
   chartContainer: { padding: 20, border: "1px solid #f1f5f9", borderRadius: 20 },
   tooltip: { borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" },
-  inputRow: { display: "flex", alignItems: "center", marginBottom: 20 },
-  inputLabel: { flex: 1, fontWeight: 600, color: '#334155', fontSize: 14 },
-  inputWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
-  inputField: { width: "130px", padding: "12px 16px", borderRadius: 12, border: "1px solid #e2e8f0", outline: "none", fontSize: 15, paddingRight: 60 },
-  unitLabel: { position: 'absolute', right: 15, color: '#94a3b8', fontSize: 12 },
-  saveBtn: { marginTop: 15, width: '100%', padding: "14px", background: "#3b82f6", color: "white", border: "none", borderRadius: 12, fontWeight: 700, cursor: "pointer" }
 };

@@ -51,7 +51,7 @@ export default function DashboardTMA({ station }) {
     return <div style={{ padding: "30px" }}>Data TMA tidak tersedia</div>;
   }
 
-  const status = getTMAStatus(data.last);
+  const status = getTMAStatus(data.status);
 
   // 🔥 PREDIKSI LOGIC
   const predictionSeries = data.prediction_series || [];
