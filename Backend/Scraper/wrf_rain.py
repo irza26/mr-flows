@@ -98,14 +98,14 @@ def extract_datetime_from_filename(f):
 # =========================
 # MAIN FUNCTION
 # =========================
-def get_wrf_timeseries(limit=24):
+def get_wrf_timeseries():
     files = get_file_list()
 
-    # 🔥 SORT BERDASARKAN WAKTU (bukan string)
     files = sorted(files, key=lambda x: extract_datetime_from_filename(x))
 
-    # 🔥 AMBIL DARI AWAL (timeline forecast)
-    files = files[:limit]
+    # Ambil semua file mulai dari awal hari ini (00:00)
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    files = [f for f in files if extract_datetime_from_filename(f) >= today_start]
 
     results = {p["name"]: [] for p in POINTS}
 
@@ -141,5 +141,5 @@ def get_wrf_timeseries(limit=24):
 # =========================
 if __name__ == "__main__":
     import json
-    data = get_wrf_timeseries(limit=24)
+    data = get_wrf_timeseries()
     print(json.dumps(data, indent=2))

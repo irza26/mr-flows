@@ -27,7 +27,7 @@ def get_cached_wrf():
     if WRF_CACHE["data"] and (now - WRF_CACHE["last_fetch"] < 300):
         return WRF_CACHE["data"]
 
-    data = get_wrf_timeseries(limit=24)
+    data = get_wrf_timeseries()
 
     WRF_CACHE["data"] = data
     WRF_CACHE["last_fetch"] = now
