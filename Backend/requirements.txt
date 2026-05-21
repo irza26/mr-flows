@@ -11,3 +11,8 @@ shapely
 pyogrio
 requests
 joblib
+numpy
+pandas
+scikit-learn
+xgboost
+beautifulsoup4
