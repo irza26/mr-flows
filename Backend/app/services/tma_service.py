@@ -6,12 +6,11 @@ import pandas as pd
 from app.db import conn
 from Scraper.wrf_rain import get_wrf_timeseries
 
-model = joblib.load("model/model_tma_v2.pkl")
-meta  = joblib.load("model/model_tma_v2_meta.pkl")
+model = joblib.load("model/model_tma_v3.pkl")
+meta  = joblib.load("model/model_tma_v3_meta.pkl")
 
-# ===== WRF CACHE =====
 _WRF_CACHE = {"data": None, "ts": 0}
-_WRF_TTL   = 300  # 5 min
+_WRF_TTL   = 300
 
 
 def _get_wrf_cached():
@@ -19,7 +18,7 @@ def _get_wrf_cached():
     if _WRF_CACHE["data"] and (now - _WRF_CACHE["ts"]) < _WRF_TTL:
         return _WRF_CACHE["data"]
     try:
-        data = get_wrf_timeseries(limit=24)
+        data = get_wrf_timeseries()
         _WRF_CACHE["data"] = data
         _WRF_CACHE["ts"] = now
         return data
@@ -28,73 +27,10 @@ def _get_wrf_cached():
         return {}
 
 
-# ===== FEATURE ENGINEERING =====
-
-def build_features_inference(df_recent, meta):
-    """Replika persis pipeline training — JANGAN ubah urutan."""
-    freq         = meta["freq"]
-    lag_dict     = meta["lag_dict"]
-    rain_cols    = meta["rain_cols"]
-    roll_windows = meta["roll_windows"]
-    menit_pp     = meta["menit_per_periode"]
-    aktif_thr    = meta["aktif_thr"]
-
-    df = df_recent.copy()
-
-    # QC
-    for c in rain_cols:
-        df.loc[df[c] < 0, c] = np.nan
-    df.loc[df["water_level"] <= 0, "water_level"] = np.nan
-    df.loc[df["water_level"] > 5,  "water_level"] = np.nan
-
-    # Imputasi
-    df = df.set_index("datetime").sort_index()
-    df["water_level"] = df["water_level"].interpolate(method="time")
-    for c in rain_cols:
-        df[c] = df[c].interpolate(
-            method="linear", limit=meta["ch_max_interp"], limit_direction="forward"
-        )
-
-    # Resample ke freq model
-    rain_resampled = df[rain_cols].resample(freq).sum()
-    tma_resampled  = df[["water_level"]].resample(freq).last()
-    df = rain_resampled.join(tma_resampled).reset_index()
-    df["tma_target"] = df["water_level"]
-
-    # Lag tersimpan (dari meta — jangan cari ulang)
-    for col, lag in lag_dict.items():
-        df[col] = df[col].shift(lag)
-
-    df["tma_lag1"] = df["tma_target"].shift(1)
-    df["n_stasiun_aktif"] = (df[rain_cols] > aktif_thr).sum(axis=1)
-
-    # Rolling features — build dict then concat once
-    roll_dict = {}
-    for col in rain_cols:
-        st = col.replace("rainfall_", "").replace(" ", "")
-        shifted = df[col].shift(1)
-        for w in roll_windows:
-            menit = w * menit_pp
-            roll_dict[f"roll{menit}m_{st}"] = shifted.rolling(w, min_periods=1).sum()
-    if roll_dict:
-        df = pd.concat([df, pd.DataFrame(roll_dict, index=df.index)], axis=1)
-
-    # Interaction features — build dict then concat once
-    ia_dict = {}
-    for order in range(2, min(5, len(rain_cols)) + 1):
-        for combo in itertools.combinations(rain_cols, order):
-            short = [c.replace("rainfall_", "").replace(" ", "") for c in combo]
-            ia_dict["IA_" + "_x_".join(short)] = df[list(combo)].prod(axis=1)
-    if ia_dict:
-        df = pd.concat([df, pd.DataFrame(ia_dict, index=df.index)], axis=1)
-
-    return df
-
-
 # ===== DB FETCH =====
 
 def _get_db_recent(station, hours=72):
-    """Return wide DataFrame: datetime, water_level, rainfall_<stasiun>..."""
+    """Return wide DataFrame: datetime, water_level, rainfall_<st>..."""
     cur = conn.cursor()
     try:
         cur.execute("""
@@ -107,8 +43,8 @@ def _get_db_recent(station, hours=72):
             return None
 
         df = pd.DataFrame(rows, columns=["datetime", "water_level"])
-        df["datetime"]     = pd.to_datetime(df["datetime"])
-        df["water_level"]  = pd.to_numeric(df["water_level"], errors="coerce")
+        df["datetime"]    = pd.to_datetime(df["datetime"])
+        df["water_level"] = pd.to_numeric(df["water_level"], errors="coerce")
 
         for rain_col in meta["rain_cols"]:
             stn = rain_col.replace("rainfall_", "")
@@ -134,110 +70,204 @@ def _get_db_recent(station, hours=72):
         cur.close()
 
 
-# ===== WRF ALIGNMENT =====
+# ===== BUILD UNIFIED TIMELINE =====
 
-def _align_wrf(wrf_raw, prediction_datetimes):
+def _build_unified_timeline(df_obs, wrf_raw):
     """
-    Distribusi data WRF (1h atau 3h) ke setiap langkah prediksi model.
-    Rainfall WRF per-interval dibagi proporsional sesuai freq model.
-    Returns ({stn: [val_per_step]}, [source_per_step]).
+    QC + resample observed data to model freq, then append WRF-disaggregated
+    rainfall rows for t > t0 (water_level=NaN, to be filled by recursive forecast).
+    Returns (df_full [DatetimeIndex], t0_idx).
     """
-    rain_stations = [c.replace("rainfall_", "") for c in meta["rain_cols"]]
-    freq_td = pd.Timedelta(meta["freq"])
+    freq      = meta["freq"]
+    freq_td   = pd.Timedelta(freq)
+    rain_cols = meta["rain_cols"]
+    ch_max    = meta["ch_max_interp"]
 
-    # Deteksi interval WRF dari data
+    df = df_obs.copy()
+    df["datetime"] = pd.to_datetime(df["datetime"])
+    for c in rain_cols:
+        if c in df.columns:
+            df.loc[df[c] < 0, c] = np.nan
+    df.loc[df["water_level"] <= 0, "water_level"] = np.nan
+    df.loc[df["water_level"] > 5,  "water_level"] = np.nan
+
+    df = df.set_index("datetime").sort_index()
+    df["water_level"] = df["water_level"].interpolate(method="time")
+    for c in rain_cols:
+        if c in df.columns:
+            df[c] = df[c].interpolate(method="linear", limit=ch_max, limit_direction="forward")
+
+    df_hist = df[rain_cols].resample(freq).sum().join(df[["water_level"]].resample(freq).last())
+    t0_ts   = df_hist.index[-1]
+
+    # Detect WRF interval from data
     sample = next((v for v in wrf_raw.values() if len(v) > 1), None)
-    if sample:
-        wrf_interval = pd.Timestamp(sample[1]["time"]) - pd.Timestamp(sample[0]["time"])
+    wrf_interval = (pd.Timestamp(sample[1]["time"]) - pd.Timestamp(sample[0]["time"])
+                    if sample else pd.Timedelta("3h"))
+    steps_per = max(1, int(wrf_interval.total_seconds() / freq_td.total_seconds()))
+
+    # Collect WRF timestamps strictly after t0
+    future_wts = sorted({
+        pd.Timestamp(s["time"])
+        for sv in wrf_raw.values() for s in sv
+        if pd.Timestamp(s["time"]) > t0_ts
+    })
+
+    if future_wts:
+        wrf_end    = future_wts[-1] + wrf_interval - freq_td
+        future_idx = pd.date_range(start=t0_ts + freq_td, end=wrf_end, freq=freq)
+        future_df  = pd.DataFrame({"water_level": np.nan}, index=future_idx)
+
+        for rc in rain_cols:
+            stn     = rc.replace("rainfall_", "")
+            wrf_map = {pd.Timestamp(s["time"]): float(s.get("rain_mm") or 0)
+                       for s in wrf_raw.get(stn, [])}
+            future_df[rc] = [
+                next((wv / steps_per for wt, wv in wrf_map.items()
+                      if wt <= dt < wt + wrf_interval), 0.0)
+                for dt in future_idx
+            ]
+
+        df_full = pd.concat([df_hist, future_df])
     else:
-        wrf_interval = pd.Timedelta("1h")
+        df_full = df_hist.copy()
 
-    ratio = freq_td.total_seconds() / wrf_interval.total_seconds()
+    df_full = df_full[~df_full.index.duplicated(keep="last")].sort_index()
+    df_full.index.name = "datetime"
 
-    per_station: dict[str, list[float]] = {}
-    for stn in rain_stations:
-        series = wrf_raw.get(stn, [])
-        if not series:
-            per_station[stn] = [0.0] * len(prediction_datetimes)
-            continue
+    t0_idx = int(df_full.index.get_loc(t0_ts)) if t0_ts in df_full.index else len(df_hist) - 1
+    return df_full, t0_idx
 
-        wrf_times = [pd.Timestamp(s["time"]) for s in series]
-        wrf_vals  = [float(s.get("rain_mm") or 0) for s in series]
 
-        vals = []
-        for dt in prediction_datetimes:
-            matched = 0.0
-            for i, wt in enumerate(wrf_times):
-                if wt <= dt < wt + wrf_interval:
-                    matched = wrf_vals[i] * ratio
-                    break
-            vals.append(matched)
-        per_station[stn] = vals
+# ===== FEATURE ENGINEERING =====
 
-    # Source flag per langkah
-    sources = []
-    for dt in prediction_datetimes:
-        covered = False
-        for stn in rain_stations:
-            for s in wrf_raw.get(stn, []):
-                wt = pd.Timestamp(s["time"])
-                if wt <= dt < wt + wrf_interval:
-                    covered = True
-                    break
-            if covered:
-                break
-        sources.append("wrf" if covered else "nowcast")
+def _build_features(df_in):
+    """
+    Replicate training feature engineering exactly.
+    Accepts DatetimeIndex df; returns df with 'datetime' column and all feature cols.
+    lag_dict values are dicts {"lag": int, ...} so we extract ["lag"] explicitly.
+    """
+    strategy     = meta["best_strategy"]
+    rain_cols    = meta["rain_cols"]
+    roll_windows = meta["roll_windows"]
+    menit_pp     = meta["menit_per_periode"]
+    aktif_thr    = meta["aktif_thr"]
+    feat_info    = meta["feature_info"]
 
-    return per_station, sources
+    df = df_in.copy()
+    if isinstance(df.index, pd.DatetimeIndex):
+        df = df.reset_index()  # 'datetime' becomes a regular column
+
+    df["tma_lag1"] = df["water_level"].shift(1)
+
+    roll_dict = {}
+
+    if strategy == "lag_then_roll":
+        lag_dict = feat_info["lag_dict"]
+        for col, val in lag_dict.items():
+            lag = val["lag"] if isinstance(val, dict) else int(val)
+            if col in df.columns:
+                df[col] = df[col].shift(lag)
+        # Rolling on already-lagged col with extra shift(1) — matches training
+        for col in rain_cols:
+            st      = col.replace("rainfall_", "").replace(" ", "")
+            shifted = df[col].shift(1)
+            for w in roll_windows:
+                roll_dict[f"roll{w * menit_pp}m_{st}"] = shifted.rolling(w, min_periods=1).sum()
+
+    else:  # roll_then_lag
+        combo_dict = feat_info["combo_dict"]
+        for col in rain_cols:
+            stn = col.replace("rainfall_", "").replace(" ", "")
+            cfg = combo_dict.get(col, combo_dict.get(stn, {}))
+            lag = cfg.get("lag", 1) if isinstance(cfg, dict) else int(cfg or 1)
+            w_c = cfg.get("window") if isinstance(cfg, dict) else None
+            for w in (set(roll_windows) | ({w_c} if w_c else set())):
+                roll_dict[f"roll{w * menit_pp}m_{stn}"] = df[col].rolling(w, min_periods=1).sum().shift(lag)
+            df[col] = df[col].shift(lag)
+
+    if roll_dict:
+        df = pd.concat([df, pd.DataFrame(roll_dict, index=df.index)], axis=1)
+
+    # n_stasiun_aktif and interactions use the already-shifted rain_cols
+    df["n_stasiun_aktif"] = (df[rain_cols] > aktif_thr).sum(axis=1)
+
+    ia_dict = {}
+    for order in range(2, min(5, len(rain_cols)) + 1):
+        for combo in itertools.combinations(rain_cols, order):
+            short = [c.replace("rainfall_", "").replace(" ", "") for c in combo]
+            ia_dict["IA_" + "_x_".join(short)] = df[list(combo)].prod(axis=1)
+    if ia_dict:
+        df = pd.concat([df, pd.DataFrame(ia_dict, index=df.index)], axis=1)
+
+    return df
+
+
+# ===== NOWCAST HORIZON =====
+
+def _nowcast_menit():
+    """Max lag in periods × minutes/period = how far ahead observational data still drives features."""
+    menit_pp  = meta["menit_per_periode"]
+    feat_info = meta["feature_info"]
+    if meta["best_strategy"] == "lag_then_roll":
+        vals = feat_info["lag_dict"].values()
+        lags = [v["lag"] if isinstance(v, dict) else int(v) for v in vals]
+    else:
+        vals = feat_info["combo_dict"].values()
+        lags = [v.get("lag", 0) if isinstance(v, dict) else int(v or 0) for v in vals]
+    return max(lags, default=0) * menit_pp
 
 
 # ===== RECURSIVE MULTI-STEP =====
 
-def _run_multi_step(df_initial, horizon_steps, rainfall_fc):
-    """Recursive forecast: hasil prediksi jadi tma_lag1 langkah berikut."""
-    predictions = []
-    df_work = df_initial.copy()
+def _run_recursive(df_full, t0_idx, nc_menit):
+    """
+    For each future step i > t0_idx: build features from df_full[:i+1],
+    predict, write predicted TMA back into df_full[i] so the next step's
+    tma_lag1 is correct. Returns list of {datetime, water_level_pred, is_nowcast}.
+    """
+    t0_ts = df_full.index[t0_idx]
+    preds = []
 
-    for h in range(horizon_steps):
-        df_feat = build_features_inference(df_work, meta)
-        X = df_feat[meta["feature_cols"]].iloc[[-1]]
+    for i in range(t0_idx + 1, len(df_full)):
+        df_feat = _build_features(df_full.iloc[:i + 1])
+        X       = pd.DataFrame([df_feat.iloc[-1][meta["feature_cols"]]])
 
         if X.isnull().values.any():
-            print(f"PREDICT STEP {h}: NaN features, stop.")
+            print(f"PREDICT step {i}: NaN in features, stopping.")
             break
 
-        y_hat   = float(model.predict(X)[0])
-        next_dt = df_feat["datetime"].iloc[-1] + pd.Timedelta(meta["freq"])
+        y_hat  = float(model.predict(X)[0])
+        t_pred = df_full.index[i]
 
-        predictions.append({"datetime": next_dt, "water_level_pred": y_hat})
+        df_full.at[t_pred, "water_level"] = y_hat
 
-        # Append baris baru: predicted TMA + WRF/zero rainfall
-        new_row = {"datetime": next_dt, "water_level": y_hat}
-        for c in meta["rain_cols"]:
-            stn = c.replace("rainfall_", "")
-            fc_list = rainfall_fc.get(stn, []) if rainfall_fc else []
-            new_row[c] = fc_list[h] if h < len(fc_list) else 0.0
+        minutes_ahead = (t_pred - t0_ts).total_seconds() / 60
+        preds.append({
+            "datetime":         t_pred,
+            "water_level_pred": y_hat,
+            "is_nowcast":       minutes_ahead <= nc_menit,
+        })
 
-        df_work = pd.concat([df_work, pd.DataFrame([new_row])], ignore_index=True)
-
-    return predictions
+    return preds
 
 
 # ===== PUBLIC API =====
 
 def _horizon_steps():
-    """12 jam dalam satuan periode model."""
     return max(1, int(12 * 60 / meta.get("menit_per_periode", 60)))
 
 
 def predict_single(station):
-    """Prediksi 1 langkah (1 periode model) — untuk stat card 1 jam."""
-    df = _get_db_recent(station)
-    if df is None or df.empty:
+    """1-step-ahead prediction for the stat card."""
+    df_obs = _get_db_recent(station)
+    if df_obs is None or df_obs.empty:
         return None
 
-    df_feat = build_features_inference(df, meta)
-    X = df_feat[meta["feature_cols"]].iloc[[-1]]
+    df_full, _ = _build_unified_timeline(df_obs, {})
+    df_feat    = _build_features(df_full)
+    X          = pd.DataFrame([df_feat.iloc[-1][meta["feature_cols"]]])
+
     if X.isnull().values.any():
         return None
 
@@ -246,40 +276,31 @@ def predict_single(station):
 
 def predict_series(station, horizon_steps=None):
     """
-    Multi-step forecast dengan WRF ITB (fallback: rainfall=0 / nowcast).
-    Return: list of {time, water_level, source}
-      source: "wrf" | "nowcast"
+    Multi-step recursive forecast using unified observed+WRF timeline.
+    Returns list of {time, water_level, is_nowcast, source} — same shape as v2.
     """
     if horizon_steps is None:
         horizon_steps = _horizon_steps()
 
-    df = _get_db_recent(station)
-    if df is None or df.empty:
+    df_obs = _get_db_recent(station)
+    if df_obs is None or df_obs.empty:
         return []
 
-    # Tentukan datetime tiap langkah prediksi
-    df_base  = build_features_inference(df.copy(), meta)
-    last_dt  = df_base["datetime"].iloc[-1]
-    freq_td  = pd.Timedelta(meta["freq"])
-    pred_dts = [last_dt + freq_td * (i + 1) for i in range(horizon_steps)]
+    wrf_raw = _get_wrf_cached()
+    df_full, t0_idx = _build_unified_timeline(df_obs, wrf_raw)
+    nc_menit        = _nowcast_menit()
 
-    # Sinkronisasi WRF
-    try:
-        wrf_raw = _get_wrf_cached()
-        rainfall_fc, sources = _align_wrf(wrf_raw, pred_dts)
-    except Exception as e:
-        print(f"WRF ALIGN ERROR: {e}")
-        rainfall_fc = None
-        sources = ["nowcast"] * horizon_steps
+    end_idx = min(len(df_full), t0_idx + 1 + horizon_steps)
+    df_full = df_full.iloc[:end_idx].copy()
 
-    # Jalankan prediksi rekursif
-    preds = _run_multi_step(df, horizon_steps, rainfall_fc)
+    preds = _run_recursive(df_full, t0_idx, nc_menit)
 
     return [
         {
             "time":        p["datetime"].strftime("%d %b %H:%M"),
             "water_level": round(p["water_level_pred"], 2),
-            "source":      sources[i] if i < len(sources) else "nowcast",
+            "is_nowcast":  p["is_nowcast"],
+            "source":      "nowcast" if p["is_nowcast"] else "wrf",
         }
-        for i, p in enumerate(preds)
+        for p in preds
     ]
