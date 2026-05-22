@@ -231,7 +231,7 @@ export default function DashboardMapViewer() {
                 transition: "background 0.2s"
               }}
             >
-              👥 Layanan Pengguna
+              Layanan Pengguna
             </button>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function DashboardMapViewer() {
         {/* SUB-HEADER: Informasi Area Monitoring Lokasi */}
         <div style={{ padding: "14px 20px 4px 20px", backgroundColor: "#f8fafc" }}>
           <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#334155', margin: 0 }}>
-            📍 Lokasi Monitoring Stasiun
+            Lokasi Monitoring Stasiun
           </h3>
         </div>
 
@@ -251,7 +251,7 @@ export default function DashboardMapViewer() {
             
             if (!d) return (
               <div key={st.label} style={{ padding: "14px", background: "#f1f5f9", borderRadius: "10px", fontSize: "12px", color: "#64748b" }}>
-                🚀 Sinkronisasi data {st.label}...
+                Sinkronisasi data {st.label}...
               </div>
             );
 
@@ -310,7 +310,7 @@ export default function DashboardMapViewer() {
                 </div>
 
                 <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "8px", textAlign: "right", fontWeight: "500" }}>
-                  🕒 {d.last_time ?? "-"} WIB
+                  {d.last_time ?? "-"} WIB
                 </div>
               </div>
             );
