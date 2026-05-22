@@ -221,7 +221,7 @@ export default function DashboardMapViewer() {
                 transition: "background 0.2s"
               }}
             >
-              🗺️ Map Viewer Utama
+              Map Viewer Utama
             </button>
             <button
               onClick={() => navigate("/layanan")}
