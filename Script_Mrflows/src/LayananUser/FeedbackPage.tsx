@@ -1,30 +1,6 @@
 import React, { useState, CSSProperties, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const MessageIcon = ({ size = 36, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
-
-const XIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-
-const ShieldIcon = ({ size = 16, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-);
-
 export default function FeedbackPage() {
   const navigate = useNavigate();
   
@@ -83,16 +59,13 @@ export default function FeedbackPage() {
       </div>
 
       <div style={headerSection}>
-        <h2 style={{
-          fontSize: isMobile ? "32px" : "42px",
-          color: "#0f172a",
-          margin: "0 0 10px 0",
-          fontWeight: 800,
-          display: "flex",
-          alignItems: "center",
-          gap: "12px"
+        <h2 style={{ 
+          fontSize: isMobile ? "32px" : "42px", // Sedikit lebih kecil di HP agar tidak overflow
+          color: "#0f172a", 
+          margin: "0 0 10px 0", 
+          fontWeight: 800 
         }}>
-          <MessageIcon size={isMobile ? 28 : 36} color="#10b981" /> Feedback <span style={{ color: "#10b981" }}>Pengguna</span>
+          💬 Feedback <span style={{ color: "#10b981" }}>Pengguna</span>
         </h2>
         <p style={{ color: "#64748b", fontSize: "16px", maxWidth: "700px" }}>
           Bantu kami melakukan kalibrasi model AI dengan memberikan laporan akurasi data di lokasi Anda.
@@ -151,12 +124,12 @@ export default function FeedbackPage() {
               flexDirection: isMobile ? "column" : "row" // Di HP radio button bertumpuk vertikal
             }}>
               <label style={radioLabel}>
-                <input type="radio" name="tma" required onChange={() => setFormData({...formData, akurasiTMA: "Ya"})} />
-                <CheckIcon /> Sesuai
+                <input type="radio" name="tma" required onChange={() => setFormData({...formData, akurasiTMA: "Ya"})} /> 
+                <span>✅ Sesuai</span>
               </label>
               <label style={radioLabel}>
-                <input type="radio" name="tma" onChange={() => setFormData({...formData, akurasiTMA: "Tidak"})} />
-                <XIcon /> Tidak Sesuai
+                <input type="radio" name="tma" onChange={() => setFormData({...formData, akurasiTMA: "Tidak"})} /> 
+                <span>❌ Tidak Sesuai</span>
               </label>
             </div>
           </div>
@@ -169,12 +142,12 @@ export default function FeedbackPage() {
               flexDirection: isMobile ? "column" : "row" // Di HP radio button bertumpuk vertikal
             }}>
               <label style={radioLabel}>
-                <input type="radio" name="ch" required onChange={() => setFormData({...formData, akurasiCH: "Ya"})} />
-                <CheckIcon /> Sesuai
+                <input type="radio" name="ch" required onChange={() => setFormData({...formData, akurasiCH: "Ya"})} /> 
+                <span>✅ Sesuai</span>
               </label>
               <label style={radioLabel}>
-                <input type="radio" name="ch" onChange={() => setFormData({...formData, akurasiCH: "Tidak"})} />
-                <XIcon /> Tidak Sesuai
+                <input type="radio" name="ch" onChange={() => setFormData({...formData, akurasiCH: "Tidak"})} /> 
+                <span>❌ Tidak Sesuai</span>
               </label>
             </div>
           </div>
@@ -205,8 +178,8 @@ export default function FeedbackPage() {
 
       </form>
 
-      <div style={{ ...footerNote, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-        <ShieldIcon size={14} color="#94a3b8" /> Partisipasi Anda membantu ribuan orang mendapatkan peringatan dini yang lebih akurat.
+      <div style={footerNote}>
+        🛡️ Partisipasi Anda membantu ribuan orang mendapatkan peringatan dini yang lebih akurat.
       </div>
     </div>
   );

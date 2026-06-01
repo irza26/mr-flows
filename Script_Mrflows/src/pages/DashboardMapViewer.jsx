@@ -48,7 +48,6 @@ export default function DashboardMapViewer() {
   const [alertStatus, setAlertStatus] = useState("");
   const [alertStation, setAlertStation] = useState("");
   const [windowWidth, setWindowWidth] = useState(() => window.innerWidth);
-  const [mobileView, setMobileView] = useState("list");
 
   const alertTriggered = useRef(false);
   const mapRef = useRef(null);
@@ -78,7 +77,7 @@ export default function DashboardMapViewer() {
         mapRef.current.invalidateSize();
       }, 300);
     }
-  }, [dasGeo, riverGeo, kecGeo, windowWidth, mobileView]);
+  }, [dasGeo, riverGeo, kecGeo, windowWidth]);
 
   useEffect(() => {
     shp("/DAS/DAS.zip").then(setDasGeo).catch(console.error);
@@ -162,33 +161,28 @@ export default function DashboardMapViewer() {
     }
   };
 
-  const focusAndSwitchToMap = (lat, lon) => {
-    focusStationOnMap(lat, lon);
-    if (isMobile) setMobileView("map");
-  };
-
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "row",
-      width: "100vw",
-      height: "100vh",
+    <div style={{ 
+      display: "flex", 
+      flexDirection: isMobile ? "column" : "row", 
+      width: "100vw", 
+      height: "100vh", 
       fontFamily: "system-ui, -apple-system, sans-serif",
       backgroundColor: "#f8fafc",
       overflow: "hidden"
     }}>
-
+      
       {/* ════════════════ PANEL RINGKASAN DATA STASIUN ════════════════ */}
-      {(!isMobile || mobileView === "list") && (
       <div style={{
         width: getSidebarWidth(),
-        height: "100vh",
+        height: "100vh", // 🔥 Diubah jadi 100vh terus menerus supaya di HP memenuhi full screen
         display: "flex",
         flexDirection: "column",
         boxShadow: isMobile ? "none" : "4px 0 24px rgba(0,0,0,0.06)",
         zIndex: 1000,
         backgroundColor: "#fff",
         flexShrink: 0,
+        order: isMobile ? 2 : 1
       }}>
         
         {/* HEADER IDENTITY: Logo & Branding Identity */}
@@ -268,7 +262,7 @@ export default function DashboardMapViewer() {
             return (
               <div 
                 key={st.label}
-                onClick={() => focusAndSwitchToMap(st.lat, st.lon)}
+                onClick={() => focusStationOnMap(st.lat, st.lon)}
                 style={{
                   padding: "14px",
                   borderRadius: "12px",
@@ -322,52 +316,12 @@ export default function DashboardMapViewer() {
             );
           })}
         </div>
-
-        {/* MOBILE: Tombol switch ke tampilan peta */}
-        {isMobile && (
-          <div style={{ padding: "16px 20px", borderTop: "1px solid #f1f5f9", flexShrink: 0 }}>
-            <button
-              onClick={() => setMobileView("map")}
-              style={{
-                width: "100%", padding: "14px", borderRadius: "12px",
-                background: "#0f172a", color: "#fff", border: "none",
-                fontWeight: "700", fontSize: "14px", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "10px"
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                <line x1="8" y1="2" x2="8" y2="18"/>
-                <line x1="16" y1="6" x2="16" y2="22"/>
-              </svg>
-              Lihat Peta Interaktif
-            </button>
-          </div>
-        )}
       </div>
-      )}
 
-      {/* ════════════════ PANEL PETA INTERAKTIF ════════════════ */}
-      {(!isMobile || mobileView === "map") && (
-        <div style={{ flex: 1, height: "100vh", position: "relative", overflow: "hidden" }}>
-
-          {/* MOBILE: Tombol kembali ke daftar stasiun */}
-          {isMobile && (
-            <button
-              onClick={() => setMobileView("list")}
-              style={{
-                position: "absolute", top: 16, left: 16, zIndex: 999,
-                background: "white", border: "1px solid #e2e8f0",
-                borderRadius: "12px", padding: "10px 16px",
-                fontWeight: "700", fontSize: "13px", cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                display: "flex", alignItems: "center", gap: "6px", color: "#0f172a"
-              }}
-            >
-              ← Daftar Stasiun
-            </button>
-          )}
-
+      {/* ════════════════ PANEL PETA INTERAKTIF FULL SCREEN ════════════════ */}
+      {/* 🔥 Logika Kondisional: Peta Leaflet hanya di-render jika layar BUKAN mobile */}
+      {!isMobile && (
+        <div style={{ flex: 1, height: "100vh", position: "relative", overflow: "hidden", order: 2 }}>
           <MapContainer
             center={[-7.12, 107.7]}
             zoom={12}

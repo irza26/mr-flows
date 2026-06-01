@@ -1,56 +1,30 @@
-import React, { CSSProperties, useState, useEffect } from "react";
+import React, { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-
-const BellIcon = ({ size = 32, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-  </svg>
-);
-
-const MessageIcon = ({ size = 32, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-  </svg>
-);
-
-const ShieldIcon = ({ size = 16, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-);
 
 export default function LayananPage() {
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  useEffect(() => {
-    const handle = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener("resize", handle);
-    return () => window.removeEventListener("resize", handle);
-  }, []);
 
   return (
-    <div style={{ ...containerStyle, padding: isMobile ? "20px 16px" : "50px 60px" }}>
+    <div style={containerStyle}>
       {/* Tombol Kembali */}
-      <div style={{ ...navContainer, marginBottom: isMobile ? "24px" : "50px", flexWrap: "wrap", gap: "10px" }}>
-        <button
-          onClick={() => navigate("/")}
+      <div style={navContainer}>
+        <button 
+          onClick={() => navigate("/")} 
           style={backButtonStyle}
           onMouseEnter={(e) => (e.currentTarget.style.background = "#fff")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
           ← Kembali ke Beranda
         </button>
-
+        
         <div style={systemStatus}>
           <span style={{ color: "#10b981" }}>●</span>
           <span>Sistem Aktif: {new Date().toLocaleDateString('id-ID')}</span>
         </div>
       </div>
 
-      <div style={{ ...headerSection, marginBottom: isMobile ? "28px" : "60px" }}>
-        <h2 style={{ fontSize: isMobile ? "26px" : "38px", color: "#0f172a", margin: "0 0 12px 0", fontWeight: 800 }}>
+      <div style={headerSection}>
+        <h2 style={{ fontSize: "38px", color: "#0f172a", margin: "0 0 12px 0", fontWeight: 800 }}>
           Pusat Layanan <span style={{ color: "#3b82f6" }}>Mitigasi</span>
         </h2>
         <p style={{ color: "#64748b", fontSize: "16px", maxWidth: "550px", lineHeight: "1.7" }}>
@@ -68,7 +42,7 @@ export default function LayananPage() {
         >
           <div style={accentBar("#3b82f6")}></div>
           <div style={iconBox("#3b82f6")}>
-            <BellIcon size={32} color="#3b82f6" />
+            <span style={{ fontSize: "32px" }}>🔔</span>
           </div>
           <h3 style={cardTitle}>Notifikasi Bencana</h3>
           <p style={cardDesc}>
@@ -88,7 +62,7 @@ export default function LayananPage() {
         >
           <div style={accentBar("#10b981")}></div>
           <div style={iconBox("#10b981")}>
-            <MessageIcon size={32} color="#10b981" />
+            <span style={{ fontSize: "32px" }}>💬</span>
           </div>
           <h3 style={cardTitle}>Feedback & Laporan</h3>
           <p style={cardDesc}>
@@ -103,9 +77,8 @@ export default function LayananPage() {
       </div>
 
       {/* Footer buat hiasan biar gak sepi bawahnya */}
-      <div style={{ ...footerNote, marginTop: isMobile ? "40px" : "100px" }}>
-        <ShieldIcon size={16} color="#94a3b8" />
-        <span>Data kamu aman dan dienkripsi oleh sistem AI MR-FLOWS.</span>
+      <div style={footerNote}>
+        🛡️ <span>Data kamu aman dan dienkripsi oleh sistem AI MR-FLOWS.</span>
       </div>
 
       <style>

@@ -1,24 +1,5 @@
-import React, { CSSProperties, useState, useEffect } from "react";
+import React, { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-
-const BellIcon = ({ size = 56, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-  </svg>
-);
-
-const CheckIcon = ({ size = 14, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
-
-const ShieldIcon = ({ size = 16, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-);
 
 // Ikon Telegram SVG
 const TelegramIcon = () => (
@@ -30,18 +11,12 @@ const TelegramIcon = () => (
 
 export default function NotifikasiPage() {
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  useEffect(() => {
-    const handle = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener("resize", handle);
-    return () => window.removeEventListener("resize", handle);
-  }, []);
-
-  const CHANNEL_URL = "https://t.me/+q9wCXEN_uP45OGVl";
+  // Ganti dengan username channel kamu (pake t.me/)
+  const CHANNEL_URL = "https://t.me/+q9wCXEN_uP45OGVl"; 
 
   return (
-    <div style={{ ...containerStyle, padding: isMobile ? "24px 16px" : "40px 20px" }}>
+    <div style={containerStyle}>
       {/* Navigasi */}
       <div style={navContainer}>
         <button 
@@ -54,14 +29,10 @@ export default function NotifikasiPage() {
 
       {/* Main Content */}
       <div style={contentWrapper}>
-        <div style={{ ...cardSection, padding: isMobile ? "32px 20px" : "60px 40px" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
-            <div style={{ padding: "18px", background: "#eff6ff", borderRadius: "24px" }}>
-              <BellIcon size={isMobile ? 44 : 56} color="#3b82f6" />
-            </div>
-          </div>
-
-          <h2 style={{ ...titleStyle, fontSize: isMobile ? "28px" : "42px", letterSpacing: isMobile ? "-0.5px" : "-1px" }}>
+        <div style={cardSection}>
+          <div style={{ fontSize: "64px", marginBottom: "20px" }}>🔔</div>
+          
+          <h2 style={titleStyle}>
             Notifikasi <span style={{ color: "#3b82f6" }}>Real-time</span>
           </h2>
           
@@ -71,18 +42,16 @@ export default function NotifikasiPage() {
           </p>
 
           <div style={featureGrid}>
-            {["Gratis & Cepat", "Update Otomatis AI", "Siaga 24/7"].map((f) => (
-              <div key={f} style={{ ...featureItem, display: "flex", alignItems: "center", gap: "6px" }}>
-                <CheckIcon size={14} color="#10b981" /> {f}
-              </div>
-            ))}
+            <div style={featureItem}>✅ Gratis & Cepat</div>
+            <div style={featureItem}>✅ Update Otomatis AI</div>
+            <div style={featureItem}>✅ Siaga 24/7</div>
           </div>
 
-          <a
+          <a 
             href={CHANNEL_URL}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ ...joinButtonStyle, padding: isMobile ? "16px 24px" : "20px 40px", fontSize: isMobile ? "15px" : "18px" }}
+            style={joinButtonStyle}
           >
             <TelegramIcon />
             Gabung Channel Telegram Sekarang
@@ -94,9 +63,7 @@ export default function NotifikasiPage() {
         </div>
 
         <div style={infoBanner}>
-          <div style={{ color: "#3b82f6", fontWeight: "800", marginBottom: "5px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <ShieldIcon size={16} color="#3b82f6" /> PRIVASI TERJAMIN
-          </div>
+          <div style={{ color: "#3b82f6", fontWeight: "800", marginBottom: "5px" }}>🛡️ PRIVASI TERJAMIN</div>
           <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
             Nomor telepon dan identitas Anda tidak akan terlihat oleh anggota lain di dalam Channel.
           </p>

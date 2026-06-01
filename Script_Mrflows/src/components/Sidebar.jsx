@@ -1,29 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import logoMrFlows from '../assets/logo.png';
+import logoMrFlows from '../assets/logo.png'; 
 import { getCHSidebar } from "../services/api";
 import { getRainStatus } from "../utils/status";
-
-const GridIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-  </svg>
-);
-
-const WavesIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-    <path d="M2 12c.6.5 1.2 1 2.5 1C7 13 7 11 9.5 11c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-    <path d="M2 18c.6.5 1.2 1 2.5 1C7 19 7 17 9.5 17c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-  </svg>
-);
-
-const UserIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
-  </svg>
-);
 
 export default function Sidebar({ onStationClick, setView }) {
   const [stations, setStations] = useState([]);
@@ -167,7 +145,7 @@ export default function Sidebar({ onStationClick, setView }) {
               padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '600', cursor: 'pointer'
             }}
           >
-            <GridIcon /> Dashboard
+            <span>⊞</span> Dashboard
           </button>
         </div>
 
@@ -207,9 +185,7 @@ export default function Sidebar({ onStationClick, setView }) {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#2d3748' }}>{s.name}</span>
-                    <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '20px', backgroundColor: `${statusInfo.color}15`, color: statusInfo.color, fontWeight: '700' }}>
-                      {statusInfo.emoji} {statusInfo.label}
-                    </span>
+                    <span>{statusInfo.bullet}</span>
                   </div>
                   <p style={{ fontSize: '12px', color: '#4a5568', margin: '5px 0' }}>Curah Hujan: <b>{s.rain_fall} mm</b></p>
                   <p style={{ fontSize: '11px', color: '#718096', margin: 0 }}>Terakhir: {s.time} WIB</p>
@@ -231,13 +207,13 @@ export default function Sidebar({ onStationClick, setView }) {
               if(isMobile) setIsOpen(false);
             }}
           >
-            <WavesIcon /> Monitoring Tinggi Air
+            🌊 Monitoring Tinggi Air
           </button>
 
           <button style={{ ...bottomBtnStyle, marginTop: '10px' }}
             onClick={() => setView('login-admin')}
           >
-            <UserIcon /> Masuk (Admin)
+            👤 Masuk (Admin)
           </button>
         </div>
       </aside>
