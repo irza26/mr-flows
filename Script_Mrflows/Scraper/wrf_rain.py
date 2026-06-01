@@ -33,16 +33,14 @@ def fetch_with_retry(url, retries=3):
 # SCRAPE FILE LIST
 # =========================
 def get_file_list():
-    res = requests.get(BASE_URL, timeout=10)
+    res = requests.get(BASE_URL, timeout=15)
+    res.raise_for_status()
     soup = BeautifulSoup(res.text, "html.parser")
-
-    files = [
+    return [
         a.get("href")
         for a in soup.find_all("a")
         if a.get("href") and a.get("href").endswith(".asc")
     ]
-
-    return files
 
 
 # =========================
@@ -99,11 +97,14 @@ def extract_datetime_from_filename(f):
 # MAIN FUNCTION
 # =========================
 def get_wrf_timeseries():
-    files = get_file_list()
+    try:
+        files = get_file_list()
+    except Exception as e:
+        print(f"WRF get_file_list ERROR: {e}")
+        return {p["name"]: [] for p in POINTS}
 
     files = sorted(files, key=lambda x: extract_datetime_from_filename(x))
 
-    # Ambil semua file mulai dari awal hari ini (00:00)
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     files = [f for f in files if extract_datetime_from_filename(f) >= today_start]
 
