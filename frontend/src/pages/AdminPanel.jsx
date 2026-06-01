@@ -262,7 +262,6 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
 
         <nav style={{ flex: 1 }}>
           <div onClick={() => closeAndSetTab("kelola")} style={styles.nav(activeTab === "kelola")}>Kelola Stasiun</div>
-          <div onClick={() => closeAndSetTab("laporan")} style={styles.nav(activeTab === "laporan")}>Laporan Data</div>
           <div onClick={() => closeAndSetTab("peringatan")} style={styles.nav(activeTab === "peringatan")}>Peringatan Dini</div>
         </nav>
 
