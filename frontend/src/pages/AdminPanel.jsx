@@ -21,18 +21,48 @@ import {
   getTMADashboard
 } from "../services/api";
 
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const ClipboardIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+  </svg>
+);
+const AlertTriangleIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+);
+const MenuIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+
 export default function AdminPanel({ setView }) {
   const [stationsKelola, setStationsKelola] = useState([]);
-  
   const [laporanStations, setLaporanStations] = useState([]);
   const [chData, setChData] = useState([]);
-  const [stats, setStats] = useState(null); 
+  const [stats, setStats] = useState(null);
   const [selectedStation, setSelectedStation] = useState("");
-  const [periode, setPeriode] = useState(24); 
+  const [periode, setPeriode] = useState(24);
 
   const [activeTab, setActiveTab] = useState("kelola");
   const [loadingSync, setLoadingSync] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handle = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener("resize", handle);
+    return () => window.removeEventListener("resize", handle);
+  }, []);
 
   // Peringatan Dini
   const [tmaWarning, setTmaWarning]           = useState(null);
@@ -198,65 +228,83 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
   };
 
 
+  const closeAndSetTab = (tab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
+
   return (
     <div style={styles.layout}>
       <style>{`
         @media print { aside { display: none !important; } main { padding: 0 !important; } .no-print { display: none !important; } body { background: white !important; } }
-        button:hover { opacity: 0.85; transform: translateY(-1px); transition: 0.2s; }
+        button:hover { opacity: 0.85; transition: 0.2s; }
       `}</style>
 
-      <aside style={styles.sidebar}>
+      {/* Mobile overlay backdrop */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1050
+        }} />
+      )}
+
+      <aside style={{
+        ...styles.sidebar,
+        ...(isMobile ? {
+          position: "fixed", top: 0, left: 0, height: "100vh", zIndex: 1100,
+          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.3s ease", boxShadow: sidebarOpen ? "4px 0 20px rgba(0,0,0,0.2)" : "none",
+        } : {})
+      }}>
         <div style={styles.logoWrap}>
-          <img 
-            src={logoMrFlows} 
-            alt="Logo MR-FLOWS" 
-            style={{ 
-            width: '40px', 
-            height: '40px', 
-            objectFit: 'cover',
-            borderRadius: '50%',
-            backgroundColor: '#f0f0f0', 
-            display: 'block'}} 
-          />
+          <img src={logoMrFlows} alt="Logo MR-FLOWS" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', backgroundColor: '#f0f0f0' }} />
           <span style={{ fontWeight: 800, color: "#1e293b", letterSpacing: '0.5px' }}>MR-ADMIN</span>
         </div>
 
         <nav style={{ flex: 1 }}>
-          <div onClick={() => setActiveTab("kelola")} style={styles.nav(activeTab === "kelola")}>Kelola Stasiun</div>
-          <div onClick={() => setActiveTab("laporan")} style={styles.nav(activeTab === "laporan")}>Laporan Data</div>
-          <div onClick={() => setActiveTab("peringatan")} style={styles.nav(activeTab === "peringatan")}>Peringatan Dini</div>
+          <div onClick={() => closeAndSetTab("kelola")} style={styles.nav(activeTab === "kelola")}>Kelola Stasiun</div>
+          <div onClick={() => closeAndSetTab("laporan")} style={styles.nav(activeTab === "laporan")}>Laporan Data</div>
+          <div onClick={() => closeAndSetTab("peringatan")} style={styles.nav(activeTab === "peringatan")}>Peringatan Dini</div>
         </nav>
 
         <button onClick={handleLogout} style={styles.logoutBtn}>Keluar</button>
       </aside>
 
-      <main style={styles.main}>
-        <header style={styles.header}>
-          <div>
-            <h1 style={styles.title}>
-              {activeTab === "kelola" && "Dashboard Status Stasiun"}
-              {activeTab === "laporan" && "Analisis Curah Hujan"}
-              {activeTab === "peringatan" && "Generator Peringatan Dini"}
-</h1>
-            <p style={styles.subtitle}>Sistem Monitoring Banjir Real-time</p>
-          </div>
-
-          <div style={styles.adminInfo}>
-            <span style={styles.dateTimeText}>{formatDateTime(currentTime)}</span>
-            <div style={styles.profileBox}>
-              <div style={styles.avatar}>A</div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={styles.adminName}>Admin User</span>
-                <span style={styles.adminRole}>Super Admin</span>
-              </div>
+      <main style={{ ...styles.main, padding: isMobile ? "20px 16px" : "40px 60px" }}>
+        <header style={{ ...styles.header, flexWrap: "wrap", gap: "12px", marginBottom: isMobile ? 20 : 35 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {isMobile && (
+              <button onClick={() => setSidebarOpen(true)} style={{ padding: "8px", borderRadius: "10px", border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                <MenuIcon />
+              </button>
+            )}
+            <div>
+              <h1 style={{ ...styles.title, fontSize: isMobile ? "20px" : "28px" }}>
+                {activeTab === "kelola" && "Dashboard Status Stasiun"}
+                {activeTab === "laporan" && "Analisis Curah Hujan"}
+                {activeTab === "peringatan" && "Generator Peringatan Dini"}
+              </h1>
+              <p style={styles.subtitle}>Sistem Monitoring Banjir Real-time</p>
             </div>
           </div>
+
+          {!isMobile && (
+            <div style={styles.adminInfo}>
+              <span style={styles.dateTimeText}>{formatDateTime(currentTime)}</span>
+              <div style={styles.profileBox}>
+                <div style={styles.avatar}>A</div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={styles.adminName}>Admin User</span>
+                  <span style={styles.adminRole}>Super Admin</span>
+                </div>
+              </div>
+            </div>
+          )}
         </header>
 
-        <div style={styles.contentCard}>
+        <div style={{ ...styles.contentCard, padding: isMobile ? 16 : 30 }}>
           {activeTab === "kelola" && (
             <>
-              <div style={styles.actionRow} className="no-print">
+              <div style={{ ...styles.actionRow, flexWrap: "wrap" }} className="no-print">
                 <button onClick={handleSyncStations} style={styles.primaryBtn}>
                    {loadingSync ? "Menyinkronkan..." : "Sinkronisasi Stasiun"}
                 </button>
@@ -293,8 +341,8 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
 
           {activeTab === "laporan" && (
             <>
-              <div style={styles.filterBar} className="no-print">
-                <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ ...styles.filterBar, flexWrap: "wrap", gap: 10 }} className="no-print">
+                <div style={{ display: 'flex', gap: 10, flexWrap: "wrap" }}>
                   <select style={styles.select} value={periode} onChange={e => setPeriode(+e.target.value)}>
                     <option value={6}>6 Jam Terakhir</option>
                     <option value={12}>12 Jam Terakhir</option>
@@ -311,7 +359,7 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
               </div>
 
               {stats && (
-                <div style={styles.statsGrid}>
+                <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)" }}>
                   <div style={styles.statItem}>
                     <span style={styles.statLabel}>Curah Hujan Saat Ini</span>
                     <span style={styles.statValue}>{stats.current} mm</span>
@@ -375,7 +423,7 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
                 ) : tmaWarning ? (
                   <>
                     {/* Info cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 28 }}>
                       <div style={{ padding: 20, background: '#f8fafc', borderRadius: 16, borderLeft: `4px solid ${currentColor}` }}>
                         <p style={{ fontSize: 11, color: '#64748b', margin: '0 0 6px', fontWeight: 600 }}>STATUS TERKINI</p>
                         <p style={{ fontSize: 22, fontWeight: 800, color: currentColor, margin: 0 }}>{tmaWarning.status ?? "Aman"}</p>
@@ -408,10 +456,13 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
                         fontSize: 15, cursor: canGenerate ? 'pointer' : 'not-allowed',
                         background: canGenerate ? '#ef4444' : '#e2e8f0',
                         color: canGenerate ? 'white' : '#94a3b8',
-                        boxShadow: canGenerate ? '0 4px 14px rgba(239,68,68,0.3)' : 'none'
+                        boxShadow: canGenerate ? '0 4px 14px rgba(239,68,68,0.3)' : 'none',
+                        display: 'flex', alignItems: 'center', gap: '8px'
                       }}
                     >
-                      {canGenerate ? '⚠️ Generate Peringatan Dini' : '✅ Kondisi Aman — Tidak Ada Peringatan'}
+                      {canGenerate
+                        ? <><AlertTriangleIcon /> Generate Peringatan Dini</>
+                        : <><CheckIcon /> Kondisi Aman — Tidak Ada Peringatan</>}
                     </button>
                   </>
                 ) : (
@@ -435,7 +486,7 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
           }}>
             {/* Header modal */}
             <div style={{ padding: '18px 24px', background: '#1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'white', fontWeight: 700, fontSize: 15 }}>📋 Teks Peringatan Dini</span>
+              <span style={{ color: 'white', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}><ClipboardIcon /> Teks Peringatan Dini</span>
               <button onClick={() => setShowWarningModal(false)}
                 style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
@@ -458,7 +509,9 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
                   background: copied ? '#22c55e' : '#0ea5e9', color: 'white',
                   transition: 'background 0.2s'
                 }}>
-                  {copied ? '✅ Tersalin!' : '📋 Salin Teks'}
+                  {copied
+                    ? <><CheckIcon /> Tersalin!</>
+                    : <><ClipboardIcon /> Salin Teks</>}
                 </button>
                 <button onClick={() => setShowWarningModal(false)} style={{
                   padding: '12px 20px', borderRadius: 12, border: '1px solid #e2e8f0',
@@ -497,8 +550,8 @@ const styles = {
   dangerBtn: { padding: "10px 20px", borderRadius: 12, background: "#fef2f2", border: "1px solid #fecaca", color: "#ef4444", fontWeight: 600, cursor: "pointer" },
   warnBtn: { padding: "10px 20px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fde68a", color: "#d97706", fontWeight: 600, cursor: "pointer" },
   table: { width: "100%", borderCollapse: "collapse" },
-  th: { textAlign: "left", padding: "16px", color: "#94a3b8", fontSize: "12px", borderBottom: "1px solid #f1f5f9", fontWeight: 600 },
-  td: { padding: "16px", fontSize: "14px", color: "#334155", borderBottom: "1px solid #f1f5f9" },
+  th: { textAlign: "left", padding: "12px 16px", color: "#94a3b8", fontSize: "12px", borderBottom: "1px solid #f1f5f9", fontWeight: 600, whiteSpace: "nowrap" },
+  td: { padding: "12px 16px", fontSize: "13px", color: "#334155", borderBottom: "1px solid #f1f5f9", whiteSpace: "nowrap" },
   badge: active => ({ padding: "4px 12px", borderRadius: 20, fontSize: "11px", fontWeight: "700", background: active ? "#f0fdf4" : "#fef2f2", color: active ? "#22c55e" : "#ef4444", border: active ? "1px solid #bbf7d0" : "1px solid #fecaca" }),
   filterBar: { display: "flex", justifyContent: "space-between", marginBottom: 25 },
   select: { padding: "10px 16px", borderRadius: 12, border: "1px solid #e2e8f0", outline: "none", color: "#475569", fontSize: 14 },

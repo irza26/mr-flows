@@ -58,10 +58,9 @@ export function MiniTMAChart({ data }: MiniChartProps) {
   ];
 
   return (
-    <div style={{ width: "100%", height: 180 }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
 
-      {/* 🔥 LEGEND */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "6px", fontSize: "10px" }}>
+      <div style={{ display: "flex", gap: "10px", marginBottom: "4px", fontSize: "10px", flexShrink: 0 }}>
         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <div style={{ width: 12, height: 3, background: "#0ea5e9" }}></div> Aktual
         </span>
@@ -70,6 +69,7 @@ export function MiniTMAChart({ data }: MiniChartProps) {
         </span>
       </div>
 
+      <div style={{ flex: 1, minHeight: 0 }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
@@ -107,6 +107,7 @@ export function MiniTMAChart({ data }: MiniChartProps) {
           />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -141,10 +142,9 @@ export function MiniCHChart({ data }: MiniChartProps) {
   ];
 
   return (
-    <div style={{ width: "100%", height: 180 }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
 
-      {/* 🔥 LEGEND */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "6px", fontSize: "10px" }}>
+      <div style={{ display: "flex", gap: "10px", marginBottom: "4px", fontSize: "10px", flexShrink: 0 }}>
         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <div style={{ width: 12, height: 3, background: "#00a8ff" }}></div> Aktual
         </span>
@@ -153,6 +153,7 @@ export function MiniCHChart({ data }: MiniChartProps) {
         </span>
       </div>
 
+      <div style={{ flex: 1, minHeight: 0 }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
@@ -190,6 +191,7 @@ export function MiniCHChart({ data }: MiniChartProps) {
           />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
