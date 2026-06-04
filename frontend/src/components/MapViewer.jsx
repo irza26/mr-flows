@@ -141,6 +141,20 @@ export default function MapViewer() {
       {/* ═══════════ DESKTOP ═══════════ */}
       {!isMobile && (
         <>
+          {/* Card Sumber Data - Kiri Atas */}
+          <div style={{
+            position: "absolute", top: 20, left: 20,
+            background: "#fff", padding: "12px 14px",
+            borderRadius: 12, boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+            fontSize: 12, zIndex: 1000, maxWidth: 240,
+          }}>
+            <b>Sumber Data</b>
+            <hr style={{ opacity: 0.2, margin: "8px 0" }} />
+            <p style={{ margin: 0, color: "#475569", lineHeight: "1.5" }}>
+              Data pengamatan pos hidrologi berasal dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>.
+            </p>
+          </div>
+
           {/* Layer control - kanan atas */}
           <div style={{
             position: "absolute", top: 20, right: 20,
@@ -154,7 +168,7 @@ export default function MapViewer() {
             <LayerCheck label="Batas Kecamatan" checked={layerVisibility.kecamatan} onChange={() => setLayerVisibility(v => ({ ...v, kecamatan: !v.kecamatan }))} />
           </div>
 
-          {/* Legenda + Chart berdampingan - kiri bawah (sama persis aslinya) */}
+          {/* Legenda + Chart berdampingan - kiri bawah */}
           <div style={{
             position: "absolute", bottom: 20, left: 20, zIndex: 1000,
             display: "flex", alignItems: "flex-end", gap: 15, pointerEvents: "none",
@@ -181,7 +195,7 @@ export default function MapViewer() {
 
             {selectedStation && selectedData && (
               <div style={{
-                width: 380,                    // ← lebar fixed, bukan flex: 1
+                width: 380,
                 background: "#fff", borderRadius: 12, padding: 15,
                 boxShadow: "0 4px 20px rgba(0,0,0,0.2)", pointerEvents: "auto",
               }}>
@@ -204,7 +218,16 @@ export default function MapViewer() {
       {/* ═══════════ MOBILE ═══════════ */}
       {isMobile && (
         <>
-          {/* Layer control - kiri atas, collapsible */}
+          {/* Card Sumber Data - Kiri Atas Mobile */}
+          <div style={{
+            position: "absolute", top: 10, left: 10, zIndex: 1000,
+            background: "#fff", padding: "8px 10px", borderRadius: 10,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.15)", fontSize: 10, maxWidth: 160,
+          }}>
+            <span style={{ color: "#475569" }}>Sumber: <b>BBWS Citarum</b> & <b>PUPR Jabar</b></span>
+          </div>
+
+          {/* Layer control - kanan atas, collapsible */}
           <div style={{
             position: "absolute", top: 10, right: 60, zIndex: 1000,
             background: "#fff", borderRadius: 10,
@@ -239,7 +262,7 @@ export default function MapViewer() {
           {/* Bottom panel — 1 kolom, chart di atas legend, TIDAK overlap */}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 1000,
-            display: "flex", flexDirection: "column",   // ← kunci: stack vertikal
+            display: "flex", flexDirection: "column",
             pointerEvents: "none",
           }}>
             {/* Chart - hanya muncul kalau ada station dipilih */}
