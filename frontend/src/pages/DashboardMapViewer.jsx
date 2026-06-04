@@ -191,7 +191,7 @@ export default function DashboardMapViewer() {
         flexShrink: 0,
       }}>
         
-        {/* HEADER IDENTITY: Logo & Branding Identity */}
+        {/* HEADER IDENTITY */}
         <div style={{ padding: "20px 20px 15px 20px", borderBottom: "1px solid #f1f5f9" }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' }}>
             <img 
@@ -242,14 +242,14 @@ export default function DashboardMapViewer() {
           </div>
         </div>
 
-        {/* SUB-HEADER: Informasi Area Monitoring Lokasi */}
+        {/* SUB-HEADER */}
         <div style={{ padding: "14px 20px 4px 20px", backgroundColor: "#f8fafc" }}>
           <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#334155', margin: 0 }}>
             Lokasi Monitoring Stasiun
           </h3>
         </div>
 
-        {/* LIST DETAIL STASIUN (SCROLLABLE) */}
+        {/* LIST DETAIL STASIUN */}
         <div style={{ padding: "12px 20px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
           {STATIONS.map((st) => {
             const d = dataMap[st.label];
@@ -321,22 +321,6 @@ export default function DashboardMapViewer() {
               </div>
             );
           })}
-
-          {/* CARD INFORMASI SUMBER DATA */}
-          <div style={{
-            padding: "14px",
-            borderRadius: "12px",
-            backgroundColor: "#f8fafc",
-            border: "1px dashed #cbd5e1",
-            marginTop: "8px"
-          }}>
-            <b style={{ fontSize: "12px", color: "#334155", display: "block", marginBottom: "4px" }}>
-              ℹSumber Data Pengamatan
-            </b>
-            <p style={{ margin: 0, fontSize: "11px", color: "#64748b", lineHeight: "1.5" }}>
-              Seluruh data pengamatan pos hidrologi pada sistem ini bersumber resmi dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>. <b>dan data prediksi dari WCPL ITB</b>
-            </p>
-          </div>
         </div>
 
         {/* MOBILE: Tombol switch ke tampilan peta */}
@@ -416,6 +400,29 @@ export default function DashboardMapViewer() {
                 />
               );
             })}
+
+            {/* CARD INFORMASI SUMBER DATA DI ATAS MAP */}
+            <div style={{
+              position: "absolute",
+              top: isMobile ? "70px" : "20px",
+              left: "20px",
+              background: "#fff",
+              padding: "12px",
+              borderRadius: "10px",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+              fontSize: "11px",
+              zIndex: 999,
+              maxWidth: "220px",
+              pointerEvents: "auto",
+              border: "1px dashed #cbd5e1"
+            }}>
+              <b style={{ color: "#334155", display: "block", marginBottom: "4px" }}>
+                ℹ️ Sumber Data Pengamatan
+              </b>
+              <p style={{ margin: 0, color: "#64748b", lineHeight: "1.4" }}>
+                Data pengamatan pos hidrologi pada sistem ini bersumber dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>.
+              </p>
+            </div>
           </MapContainer>
         </div>
       )}

@@ -136,25 +136,32 @@ export default function MapViewer() {
             </Marker>
           );
         })}
+
+        {/* CARD INFORMASI SUMBER DATA DI ATAS MAP */}
+        <div style={{
+          position: "absolute",
+          top: isMobile ? "70px" : "20px",
+          left: "20px",
+          background: "#fff",
+          padding: isMobile ? "10px 12px" : "12px 14px",
+          borderRadius: 12,
+          boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+          fontSize: isMobile ? "11px" : "12px",
+          zIndex: 1000,
+          maxWidth: isMobile ? "200px" : "240px",
+          pointerEvents: "auto"
+        }}>
+          <b>Sumber Data</b>
+          <hr style={{ opacity: 0.2, margin: "6px 0" }} />
+          <p style={{ margin: 0, color: "#475569", lineHeight: "1.5" }}>
+            Data pengamatan pos hidrologi berasal dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>.
+          </p>
+        </div>
       </MapContainer>
 
-      {/* ═══════════ DESKTOP ═══════════ */}
+      {/* ═══════════ DESKTOP CONTROLS ═══════════ */}
       {!isMobile && (
         <>
-          {/* Card Sumber Data - Kiri Atas */}
-          <div style={{
-            position: "absolute", top: 20, left: 20,
-            background: "#fff", padding: "12px 14px",
-            borderRadius: 12, boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
-            fontSize: 12, zIndex: 1000, maxWidth: 240,
-          }}>
-            <b>Sumber Data</b>
-            <hr style={{ opacity: 0.2, margin: "8px 0" }} />
-            <p style={{ margin: 0, color: "#475569", lineHeight: "1.5" }}>
-              Data pengamatan pos hidrologi berasal dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>. Data prediksi berasal dari <b>WCPL ITB</b>.
-            </p>
-          </div>
-
           {/* Layer control - kanan atas */}
           <div style={{
             position: "absolute", top: 20, right: 20,
@@ -215,18 +222,9 @@ export default function MapViewer() {
         </>
       )}
 
-      {/* ═══════════ MOBILE ═══════════ */}
+      {/* ═══════════ MOBILE CONTROLS ═══════════ */}
       {isMobile && (
         <>
-          {/* Card Sumber Data - Kiri Atas Mobile */}
-          <div style={{
-            position: "absolute", top: 10, left: 10, zIndex: 1000,
-            background: "#fff", padding: "8px 10px", borderRadius: 10,
-            boxShadow: "0 4px 14px rgba(0,0,0,0.15)", fontSize: 10, maxWidth: 160,
-          }}>
-            <span style={{ color: "#475569" }}>Sumber: <b>BBWS Citarum</b> & <b>PUPR Jabar</b></span>
-          </div>
-
           {/* Layer control - kanan atas, collapsible */}
           <div style={{
             position: "absolute", top: 10, right: 60, zIndex: 1000,
@@ -259,13 +257,12 @@ export default function MapViewer() {
             )}
           </div>
 
-          {/* Bottom panel — 1 kolom, chart di atas legend, TIDAK overlap */}
+          {/* Bottom panel */}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 1000,
             display: "flex", flexDirection: "column",
             pointerEvents: "none",
           }}>
-            {/* Chart - hanya muncul kalau ada station dipilih */}
             {selectedStation && selectedData && (
               <div style={{
                 margin: "0 10px 6px",
@@ -289,7 +286,6 @@ export default function MapViewer() {
               </div>
             )}
 
-            {/* Legenda - selalu di paling bawah */}
             <div style={{
               background: "#fff",
               borderRadius: "14px 14px 0 0",
@@ -320,7 +316,6 @@ export default function MapViewer() {
                 </div>
               </div>
             </div>
-
           </div>
         </>
       )}
