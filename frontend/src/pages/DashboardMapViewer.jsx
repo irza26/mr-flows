@@ -331,10 +331,10 @@ export default function DashboardMapViewer() {
             marginTop: "8px"
           }}>
             <b style={{ fontSize: "12px", color: "#334155", display: "block", marginBottom: "4px" }}>
-              ℹ️ Sumber Data Pengamatan
+              ℹSumber Data Pengamatan
             </b>
             <p style={{ margin: 0, fontSize: "11px", color: "#64748b", lineHeight: "1.5" }}>
-              Seluruh data pengamatan pos hidrologi pada sistem ini bersumber resmi dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>.
+              Seluruh data pengamatan pos hidrologi pada sistem ini bersumber resmi dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>. <b>dan data prediksi dari WCPL ITB</b>
             </p>
           </div>
         </div>

@@ -151,7 +151,7 @@ export default function MapViewer() {
             <b>Sumber Data</b>
             <hr style={{ opacity: 0.2, margin: "8px 0" }} />
             <p style={{ margin: 0, color: "#475569", lineHeight: "1.5" }}>
-              Data pengamatan pos hidrologi berasal dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>.
+              Data pengamatan pos hidrologi berasal dari <b>BBWS Citarum</b> dan <b>PUPR Jawa Barat</b>. Data prediksi berasal dari <b>WCPL ITB</b>.
             </p>
           </div>
 
