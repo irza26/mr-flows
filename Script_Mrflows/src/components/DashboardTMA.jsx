@@ -63,8 +63,8 @@ export default function DashboardTMA({ station }) {
 
   const prediction = lastPredictionPoint
     ? lastPredictionPoint.water_level
-    : data.prediction ?? 0;
-  const isNaik = prediction > data.last;
+    : data.prediction ?? null;
+  const isNaik = prediction !== null && prediction > data.last;
   const delta = prediction !== null
     ? (prediction - data.last).toFixed(2)
     : null;

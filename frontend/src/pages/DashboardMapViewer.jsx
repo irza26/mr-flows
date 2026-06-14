@@ -153,12 +153,12 @@ export default function DashboardMapViewer() {
         if (nextPred) {
           const predDate = parseTime(nextPred.time);
           return {
-            val: `${nextPred.rain ?? 0} mm`,
+            val: `${nextPred.rain !== null && nextPred.rain !== undefined ? nextPred.rain : "-"} mm`,
             timeLabel: `Jam ${formatHour(predDate)}`
           };
         }
       }
-      return { val: `${d.prediction_chart?.[0]?.rain ?? 0} mm`, timeLabel: "Jam -" };
+      return { val: `${(d.prediction_chart?.[0]?.rain !== null && d.prediction_chart?.[0]?.rain !== undefined) ? d.prediction_chart?.[0]?.rain : "-"} mm`, timeLabel: "Jam -" };
     }
   };
 

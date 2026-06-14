@@ -46,7 +46,7 @@ export default function DetailPrediksiCH({ data }) {
     ) || data.prediction_chart?.[0];
 
   // 🔥 ini yang dipakai di UI (TIDAK USAH ubah tampilan)
-  const lastPredVal = nearestPred?.rain ?? 0;
+  const lastPredVal = nearestPred?.rain ?? null;
   // 3. Gabungkan untuk Chart
   const chartData = [
     ...last2HoursData.map(d => ({
@@ -88,7 +88,7 @@ export default function DetailPrediksiCH({ data }) {
           <p style={{ fontSize: 13, color: "#64748b", marginBottom: "4px", fontWeight: "500" }}>Prediksi Curah Hujan (WRF)</p>
           <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
             <h1 style={{ fontSize: 72, margin: 0, fontWeight: "800", color: "#0f172a", letterSpacing: "-3px" }}>
-              {lastPredVal.toFixed(2)}
+              {lastPredVal !== null ? lastPredVal.toFixed(2) : "-"}
             </h1>
             <span style={{ fontSize: "24px", fontWeight: "600", color: "#64748b" }}>mm</span>
           </div>
@@ -200,7 +200,7 @@ export default function DetailPrediksiCH({ data }) {
             Analisis Cuaca: <span style={{ color: rainStatus.color }}>{rainStatus.desc}</span>
           </h5>
           <p style={{ margin: 0, fontSize: "13px", color: "#4a5568", lineHeight: "1.6" }}>
-             Estimasi curah hujan kedepan berada pada level <b>{lastPredVal.toFixed(2)} mm</b>. Tetap pantau kondisi sekitar.
+             Estimasi curah hujan kedepan berada pada level <b>{lastPredVal !== null ? `${lastPredVal.toFixed(2)} mm` : "-"}</b>. Tetap pantau kondisi sekitar.
           </p>
         </div>
       </div>

@@ -165,8 +165,8 @@ export default function AdminPanel({ setView }) {
     if (!tmaWarning) return;
     const { dateStr, timeStr, predictedTimeStr } = formatWarningTime(tmaWarning.last_time);
     const levelCm   = Math.round((tmaWarning.last ?? 0) * 100);
-    const predLevel = tmaWarning.prediction ?? tmaWarning.last ?? 0;
-    const delta     = predLevel - (tmaWarning.last ?? 0);
+    const predLevel = tmaWarning.prediction ?? null;
+    const delta     = (predLevel ?? tmaWarning.last ?? 0) - (tmaWarning.last ?? 0);
     const magnitude = getDeltaMagnitude(delta);
     const predStatus = getPredictionStatus(predLevel, tmaWarning.rules);
     const currentStatus = tmaWarning.status ?? "Aman";
@@ -356,8 +356,8 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
           {activeTab === "peringatan" && (() => {
             const rules = tmaWarning?.rules ?? [];
             const filtered = [...rules].filter(r => r.label !== "Aman").sort((a, b) => a.threshold - b.threshold);
-            const predLevel = tmaWarning?.prediction ?? tmaWarning?.last ?? 0;
-            const predStatus = tmaWarning ? getPredictionStatus(predLevel, tmaWarning.rules) : "Aman";
+            const predLevel = tmaWarning?.prediction ?? null;
+            const predStatus = tmaWarning ? getPredictionStatus(predLevel ?? tmaWarning?.last ?? 0, tmaWarning.rules) : "Aman";
             const canGenerate = predStatus !== "Aman";
 
             const statusColor = { Aman: "#22c55e", Waspada: "#d97706", Siaga: "#f97316", Bahaya: "#ef4444" };
@@ -384,7 +384,7 @@ Sumber : AWLR Bendung Wanir (BBWS Citarum)
                       <div style={{ padding: 20, background: '#f8fafc', borderRadius: 16, borderLeft: `4px solid ${predColor}` }}>
                         <p style={{ fontSize: 11, color: '#64748b', margin: '0 0 6px', fontWeight: 600 }}>PREDIKSI 1 JAM</p>
                         <p style={{ fontSize: 22, fontWeight: 800, color: predColor, margin: 0 }}>{predStatus}</p>
-                        <p style={{ fontSize: 13, color: '#334155', margin: '4px 0 0' }}>{Math.round(predLevel * 100)} cm</p>
+                        <p style={{ fontSize: 13, color: '#334155', margin: '4px 0 0' }}>{predLevel !== null ? `${Math.round(predLevel * 100)} cm` : "-"}</p>
                       </div>
                     </div>
 

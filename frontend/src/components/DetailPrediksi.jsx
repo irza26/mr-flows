@@ -48,8 +48,9 @@ export default function DetailPrediksi({ data }) {
   const predictionSeries = data.prediction_series || [];
 
   // Ambil prediksi 1 jam (langkah pertama) dan puncak prediksi
-  const firstPred = predictionSeries[0]?.water_level ?? data.prediction ?? 0;
-  const peakPred  = predictionSeries.length > 0
+  const hasPrediction = predictionSeries.length > 0 || data.prediction;
+  const firstPred = hasPrediction ? (predictionSeries[0]?.water_level ?? data.prediction) : null;
+  const peakPred  = hasPrediction && predictionSeries.length > 0
     ? Math.max(...predictionSeries.map(d => d.water_level))
     : firstPred;
 
@@ -122,7 +123,7 @@ export default function DetailPrediksi({ data }) {
         <div>
           <p style={{ fontSize: 13, color: "#64748b" }}>Prediksi TMA (1 Jam Kedepan)</p>
           <h1 style={{ fontSize: 72, margin: 0, fontWeight: "800", letterSpacing: "-2px" }}>
-            {firstPred.toFixed(2)} m
+            {firstPred !== null ? `${firstPred.toFixed(2)} m` : "-"}
           </h1>
           <p style={{ color: isNaik ? "#ef4444" : "#10b981", fontWeight: "bold", marginTop: "5px" }}>
             {isNaik ? "⬆️ Estimasi Naik" : "⬇️ Estimasi Turun"} {delta} m
@@ -149,7 +150,7 @@ export default function DetailPrediksi({ data }) {
         {/* Puncak 12 jam */}
         <div style={{ background: statusPeak.color + "10", border: `1px solid ${statusPeak.color}30`, borderRadius: "12px", padding: "14px 16px" }}>
           <p style={{ fontSize: 11, color: "#64748b", margin: "0 0 4px" }}>Puncak Prediksi (12 Jam)</p>
-          <b style={{ fontSize: 22, color: statusPeak.color }}>{peakPred.toFixed(2)} m</b>
+          <b style={{ fontSize: 22, color: statusPeak.color }}>{peakPred !== null ? `${peakPred.toFixed(2)} m` : "-"}</b>
           <p style={{ fontSize: 11, color: statusPeak.color, margin: "4px 0 0", fontWeight: "bold" }}>{statusPeak.label}</p>
         </div>
 

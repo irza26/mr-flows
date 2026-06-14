@@ -44,7 +44,7 @@ export default function DetailDashboard() {
 
   const fallbackPrediction = fullData.prediction_chart?.slice(-1)[0];
 
-  const prediction = nextPrediction?.rain ?? fallbackPrediction?.rain ?? 0;
+  const prediction = nextPrediction?.rain ?? fallbackPrediction?.rain ?? null;
   const predictionTime = nextPrediction?.time ?? fallbackPrediction?.time ?? "-";
 
   return (
@@ -94,7 +94,7 @@ export default function DetailDashboard() {
           <span>Prediksi (WCPL)</span>
 
           <h3>
-            {prediction} mm
+            {prediction !== null ? `${prediction} mm` : "-"}
           </h3>
 
           {/* 🔥 waktu prediksi */}
