@@ -38,13 +38,13 @@ export default function DetailTinggiAir({ data, stationStatus }) {
     return "#38a169";
   };
 
-  const getRangeText = (idx) => {
-    if (!sortedRules[idx]) return "";
-    const current = sortedRules[idx];
-    const next = sortedRules[idx + 1];
-    if (!next) return `> ${current.threshold} m`;
-    return `${current.threshold} – ${next.threshold} m`;
-  };
+  // const getRangeText = (idx) => {
+  //   if (!sortedRules[idx]) return "";
+  //   const current = sortedRules[idx];
+  //   const next = sortedRules[idx + 1];
+  //   if (!next) return `> ${current.threshold} m`;
+  //   return `${current.threshold} – ${next.threshold} m`;
+  // };
 
   // 4. Hitung Trend 24 Jam
   let trend = 0;
@@ -101,7 +101,7 @@ export default function DetailTinggiAir({ data, stationStatus }) {
       </div>
 
       {/* --- CARD STATUS & GAUGE --- */}
-      <div className="white-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "30px", marginBottom: "20px" }}>
+      {/* <div className="white-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "30px", marginBottom: "20px" }}>
         <div style={{ flex: 1 }}>
           <h4 style={{ margin: "0 0 10px 0", color: "#2d3748" }}>Status Ambang Batas</h4>
           <p style={{ fontSize: "14px", color: "#718096", lineHeight: "1.5" }}>
@@ -126,7 +126,6 @@ export default function DetailTinggiAir({ data, stationStatus }) {
             </div>
           </div>
           <div style={{ display: "grid", gap: "12px" }}>
-            {/* Zona Aman: 0 sampai threshold Waspada */}
             {ruleWaspada && (
               <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px" }}>
                 <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#38a169" }} />
@@ -141,7 +140,7 @@ export default function DetailTinggiAir({ data, stationStatus }) {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* --- CARD GRAFIK DENGAN KETERANGAN WARNA --- */}
       <div className="white-card" style={{ padding: "25px", marginBottom: "40px" }}>
